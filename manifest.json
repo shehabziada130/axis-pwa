@@ -1,25 +1,30 @@
 {
-  "name": "Axis — Day Planner",
+  "name": "Axis — One Thing at a Time",
   "short_name": "Axis",
-  "description": "Local schedule manager with recovery mode. No AI. No cloud. No account.",
+  "description": "The time budget for people who lose track of time.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0e0e0f",
-  "theme_color": "#0e0e0f",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
   "orientation": "portrait",
-  "categories": ["productivity", "utilities"],
   "icons": [
     {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
-  ]
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "en"
 }
