@@ -1,19 +1,20 @@
-const CACHE = 'axis-v1.1';
-const BASE = '/axis-pwa';
+const CACHE = 'axis-v2';
 
+// Use relative paths so it works at ANY subdirectory (e.g. /axis-pwa/)
 const ASSETS = [
-  `${BASE}/`,
-  `${BASE}/index.html`,
-  `${BASE}/manifest.json`,
-  `${BASE}/icon.svg`,
-  'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700;800&display=swap'
+  './',
+  './index.html',
+  './manifest.json',
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => {
-      return Promise.allSettled(ASSETS.map(a => c.add(a).catch(() => {})));
-    })
+    caches.open(CACHE).then(c =>
+      Promise.allSettled(ASSETS.map(a => c.add(a).catch(() => {})))
+    )
   );
   self.skipWaiting();
 });
@@ -28,6 +29,9 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Only handle GET requests from our origin
+  if (e.request.method !== 'GET') return;
+  
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
@@ -36,7 +40,16 @@ self.addEventListener('fetch', e => {
         const clone = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, clone));
         return res;
-      }).catch(() => caches.match('/axis-pwa/index.html'));
+      }).catch(() => {
+        // Offline fallback: return the main app
+        return caches.match('./index.html');
+      });
     })
   );
+});
+
+// Handle push notifications for task end alerts
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.openWindow('./index.html'));
 });

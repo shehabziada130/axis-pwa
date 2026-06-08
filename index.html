@@ -8,144 +8,143 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Axis">
 <meta name="description" content="The time budget for people who lose track of time.">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700;800&display=swap" rel="stylesheet">
 <title>Axis — One Thing at a Time</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#0a0a0f;
-  --surface:#13131a;
-  --surface2:#1c1c26;
-  --surface3:#252530;
-  --border:#2a2a3a;
-  --text:#f0f0f8;
-  --muted:#6b6b85;
-  --accent:#7c6df0;
-  --accent2:#a08df5;
-  --green:#3dd68c;
-  --amber:#f5a623;
-  --red:#f04747;
-  --radius:16px;
-  --safe-top:env(safe-area-inset-top,0px);
-  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c26;--surface3:#252530;
+  --border:#2a2a3a;--text:#f0f0f8;--muted:#6b6b85;
+  --accent:#7c6df0;--accent2:#a08df5;
+  --green:#3dd68c;--amber:#f5a623;--red:#f04747;--radius:16px;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow:hidden}
-#app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;position:relative;background:var(--bg)}
+#app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;background:var(--bg)}
 
 /* SPLASH */
-#splash{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:999;transition:opacity .5s ease}
+#splash{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:999;transition:opacity .5s ease}
 #splash.hidden{opacity:0;pointer-events:none}
-.splash-icon{width:88px;height:88px;animation:pulse 2s ease infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(.96)}}
-.splash-name{font-size:36px;font-weight:800;letter-spacing:-1px}
-.splash-slogan{font-size:13px;color:var(--muted);letter-spacing:3px;text-transform:uppercase}
+.splash-icon{width:84px;height:84px;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(.95)}}
+.splash-name{font-size:34px;font-weight:800;letter-spacing:-1px}
+.splash-slogan{font-size:12px;color:var(--muted);letter-spacing:3px;text-transform:uppercase}
 
-/* SCREENS */
-.screen{display:none;flex-direction:column;flex:1;overflow:hidden;padding:0 20px;padding-top:calc(var(--safe-top) + 12px)}
+/* LAYOUT */
+.screen{display:none;flex-direction:column;flex:1;overflow:hidden;padding:0 18px;padding-top:calc(var(--safe-top) + 10px)}
 .screen.active{display:flex}
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:16px}
 
-/* FOCUS SCREEN */
-.focus-header{text-align:center;padding:16px 0 12px}
-.focus-status{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.focus-task{font-size:24px;font-weight:800;color:var(--text);line-height:1.2}
+/* NAV */
+.bottom-nav{display:flex;justify-content:space-around;padding:10px 0;padding-bottom:calc(var(--safe-bottom) + 8px);border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
+.nav-btn{background:none;border:none;color:var(--muted);font-family:'Syne',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 16px;border-radius:10px;transition:.15s}
+.nav-btn.active{color:var(--accent)}
+.nav-icon{font-size:20px;line-height:1}
 
-.timer-ring-wrap{display:flex;justify-content:center;align-items:center;margin:12px 0;position:relative;flex-shrink:0}
+/* BUTTONS */
+.btn{border:none;border-radius:12px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;user-select:none;-webkit-user-select:none}
+.btn:active{transform:scale(.95)}
+.btn-primary{background:var(--accent);color:#fff;padding:13px 18px;font-size:14px}
+.btn-secondary{background:var(--surface2);color:var(--text);padding:13px 16px;font-size:14px;border:1px solid var(--border)}
+.btn-danger{background:rgba(240,71,71,.12);color:var(--red);border:1px solid rgba(240,71,71,.25);padding:11px 14px;font-size:13px}
+.btn-success{background:rgba(61,214,140,.12);color:var(--green);border:1px solid rgba(61,214,140,.25);padding:11px 14px;font-size:13px}
+.btn-sm{padding:9px 13px;font-size:12px;border-radius:10px}
+.btn-ghost{background:transparent;color:var(--muted);padding:9px 13px;font-size:12px;border:1px solid var(--border)}
+.btn-full{width:100%}
+
+/* FOCUS */
+.focus-header{text-align:center;padding:14px 0 10px;flex-shrink:0}
+.focus-status{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.focus-task{font-size:22px;font-weight:800;line-height:1.2}
+.focus-times{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:4px}
+
+.timer-ring-wrap{display:flex;justify-content:center;align-items:center;margin:8px 0;position:relative;flex-shrink:0}
 .timer-ring-wrap svg{transform:rotate(-90deg)}
 circle.track{fill:none;stroke:var(--surface2);stroke-width:12}
 circle.prog{fill:none;stroke:var(--accent);stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset 1s linear;stroke-dasharray:565;stroke-dashoffset:0}
 .timer-center{position:absolute;text-align:center}
-.timer-big{font-size:46px;font-weight:800;letter-spacing:-2px;color:var(--text);font-family:'DM Mono',monospace}
+.timer-big{font-size:44px;font-weight:800;letter-spacing:-2px;font-family:'DM Mono',monospace}
 .timer-sub{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:2px;text-transform:uppercase}
 
-.next-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-.next-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
-.next-name{font-size:15px;font-weight:700}
-.next-dur{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:1px}
-.next-icon{width:38px;height:38px;background:var(--surface2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px}
+.next-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.next-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.next-name{font-size:14px;font-weight:700}
+.next-time{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:1px}
+.next-icon{width:36px;height:36px;background:var(--surface2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px}
 
-.action-row{display:flex;gap:10px;margin-bottom:10px;flex-shrink:0}
-.btn{border:none;border-radius:12px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;user-select:none}
-.btn:active{transform:scale(.96)}
-.btn-primary{background:var(--accent);color:#fff;padding:14px 20px;flex:1;font-size:15px}
-.btn-secondary{background:var(--surface2);color:var(--text);padding:14px 16px;font-size:14px;border:1px solid var(--border)}
-.btn-danger{background:rgba(240,71,71,.12);color:var(--red);border:1px solid rgba(240,71,71,.25);padding:13px 14px;font-size:13px}
-.btn-success{background:rgba(61,214,140,.12);color:var(--green);border:1px solid rgba(61,214,140,.25);padding:13px 14px;font-size:13px}
-.btn-sm{padding:10px 14px;font-size:13px;border-radius:10px}
-.btn-ghost{background:transparent;color:var(--muted);padding:10px 14px;font-size:13px;border:1px solid var(--border)}
-
-.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;flex-shrink:0}
-
-.behind-banner{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.3);border-radius:14px;padding:12px 16px;margin-bottom:12px;cursor:pointer;flex-shrink:0}
+.action-row{display:flex;gap:8px;margin-bottom:8px;flex-shrink:0}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;flex-shrink:0}
+.behind-banner{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.3);border-radius:14px;padding:11px 14px;margin-bottom:10px;cursor:pointer;flex-shrink:0}
 .behind-title{font-size:13px;font-weight:700;color:var(--amber);margin-bottom:2px}
 .behind-sub{font-size:11px;color:var(--muted)}
 
-/* NAV */
-.bottom-nav{display:flex;justify-content:space-around;padding:12px 0;padding-bottom:calc(var(--safe-bottom) + 10px);border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
-.nav-btn{background:none;border:none;color:var(--muted);font-family:'Syne',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 18px;border-radius:10px;transition:.15s}
-.nav-btn.active{color:var(--accent)}
-.nav-icon{font-size:22px;line-height:1}
-
-/* SCROLLABLE CONTENT */
-.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:12px}
-
-/* SCHEDULE SCREEN */
-.screen-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0}
-.screen-title{font-size:20px;font-weight:800}
-.task-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px;transition:.15s}
-.task-item.current{border-color:var(--accent);background:rgba(124,109,240,.08)}
-.task-item.done{opacity:.4}
-.task-order{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;width:18px;text-align:center;flex-shrink:0}
-.task-emoji{font-size:20px;flex-shrink:0}
+/* SCHEDULE */
+.screen-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0}
+.screen-title{font-size:19px;font-weight:800}
+.task-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 13px;display:flex;align-items:center;gap:9px;margin-bottom:7px;transition:.15s;cursor:default}
+.task-item.current{border-color:var(--accent);background:rgba(124,109,240,.07)}
+.task-item.done{opacity:.38}
+.task-item.selected{border-color:var(--green);background:rgba(61,214,140,.07)}
+.task-order{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;width:16px;text-align:center;flex-shrink:0}
+.task-emoji{font-size:19px;flex-shrink:0}
 .task-info{flex:1;min-width:0}
 .task-name-txt{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.task-dur-txt{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px}
-.task-actions{display:flex;gap:5px;flex-shrink:0}
-.icon-btn{background:var(--surface2);border:none;color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.task-time-txt{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px}
+.task-actions{display:flex;gap:4px;flex-shrink:0}
+.icon-btn{background:var(--surface2);border:none;color:var(--muted);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+.select-check{width:20px;height:20px;border-radius:6px;background:var(--surface3);border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:.15s}
+.select-check.on{background:var(--green);border-color:var(--green);color:#fff}
 
 /* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:flex-end;justify-content:center;z-index:100}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:flex-end;justify-content:center;z-index:100}
 .modal-overlay.open{display:flex}
-.modal{background:var(--surface);border-radius:24px 24px 0 0;padding:24px 20px;width:100%;max-width:480px;padding-bottom:calc(var(--safe-bottom) + 24px);animation:slideUp .22s ease}
+.modal{background:var(--surface);border-radius:24px 24px 0 0;padding:22px 18px;width:100%;max-width:480px;padding-bottom:calc(var(--safe-bottom) + 22px);animation:slideUp .22s ease}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-title{font-size:18px;font-weight:800;margin-bottom:16px}
-.input-field{background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Syne',sans-serif;font-size:15px;padding:12px 14px;width:100%;margin-bottom:10px;outline:none;-webkit-appearance:none}
+.modal-title{font-size:17px;font-weight:800;margin-bottom:14px}
+.input-field{background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Syne',sans-serif;font-size:14px;padding:11px 13px;width:100%;margin-bottom:9px;outline:none;-webkit-appearance:none}
 .input-field:focus{border-color:var(--accent)}
-.input-row{display:flex;gap:8px;margin-bottom:10px;align-items:center}
-.input-row label{font-size:12px;color:var(--muted);width:70px;flex-shrink:0}
+.input-row{display:flex;gap:8px;margin-bottom:9px;align-items:center}
+.input-label{font-size:11px;color:var(--muted);width:68px;flex-shrink:0;font-weight:600;letter-spacing:.5px}
+.row-group{display:flex;gap:6px;align-items:center;flex:1}
 select.input-field option{background:#1c1c26}
-
-.template-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px}
-.template-card h3{font-size:15px;font-weight:700;margin-bottom:6px}
+.form-hint{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.4}
+.conflict-option{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.conflict-option:active{border-color:var(--accent)}
+.conflict-option h4{font-size:13px;font-weight:700;margin-bottom:2px}
+.conflict-option p{font-size:11px;color:var(--muted)}
+.recovery-option{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:8px;cursor:pointer}
+.recovery-option h4{font-size:13px;font-weight:700;margin-bottom:2px}
+.recovery-option p{font-size:11px;color:var(--muted);line-height:1.4}
+.template-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:9px}
+.template-card h3{font-size:14px;font-weight:700;margin-bottom:5px}
 .template-preview{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:6px;line-height:1.7}
-
-.recovery-option{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;cursor:pointer}
-.recovery-option h4{font-size:14px;font-weight:700;margin-bottom:3px}
-.recovery-option p{font-size:12px;color:var(--muted);line-height:1.4}
-
-.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:40px 20px}
-.empty-icon{font-size:52px;opacity:.35}
-.empty-title{font-size:17px;font-weight:700;color:var(--muted)}
-.empty-sub{font-size:13px;color:var(--muted);line-height:1.5;max-width:240px}
-
-.divider{height:1px;background:var(--border);margin:14px 0;flex-shrink:0}
-.section-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px}
-
-.day-done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:40px}
-.day-done h2{font-size:26px;font-weight:800}
-.day-done p{font-size:14px;color:var(--muted);line-height:1.5}
-
-.install-banner{background:rgba(124,109,240,.1);border:1px solid rgba(124,109,240,.25);border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:40px 20px}
+.empty-icon{font-size:48px;opacity:.32}
+.empty-title{font-size:16px;font-weight:700;color:var(--muted)}
+.empty-sub{font-size:12px;color:var(--muted);line-height:1.5;max-width:230px}
+.divider{height:1px;background:var(--border);margin:12px 0;flex-shrink:0}
+.section-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:9px}
+.day-done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:13px;padding:40px}
+.day-done h2{font-size:24px;font-weight:800}
+.day-done p{font-size:13px;color:var(--muted);line-height:1.5}
+.install-banner{background:rgba(124,109,240,.1);border:1px solid rgba(124,109,240,.25);border-radius:14px;padding:11px 14px;margin-bottom:13px;display:flex;align-items:center;gap:10px;flex-shrink:0}
 .install-banner p{font-size:12px;color:var(--accent2);flex:1;line-height:1.4}
-.install-banner button{background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:8px 14px;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.install-banner button{background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:7px 12px;cursor:pointer;flex-shrink:0}
+.notif-banner{background:rgba(61,214,140,.08);border:1px solid rgba(61,214,140,.25);border-radius:14px;padding:11px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.notif-banner p{font-size:12px;color:var(--green);flex:1;line-height:1.4}
+.notif-banner button{background:var(--green);color:#0a0a0f;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:7px 12px;cursor:pointer;flex-shrink:0}
+.tag{display:inline-block;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:3px 7px;border-radius:6px;font-weight:700}
+.tag-green{background:rgba(61,214,140,.15);color:var(--green)}
+.tag-amber{background:rgba(245,166,35,.15);color:var(--amber)}
+.tag-red{background:rgba(240,71,71,.15);color:var(--red)}
 </style>
 </head>
 <body>
 
-<!-- SPLASH SCREEN -->
 <div id="splash">
   <svg class="splash-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
     <rect width="512" height="512" rx="112" fill="#0a0a0f"/>
@@ -165,22 +164,18 @@ select.input-field option{background:#1c1c26}
 <div id="app"></div>
 
 <script>
-// ─── CONSTANTS & HELPERS ──────────────────────────────────────────────────────
-const EMOJIS={
-  'wake up':'🌅','sleep':'🌙','breakfast':'🍳','lunch':'🥗','dinner':'🍽️',
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const EMOJIS={'wake up':'🌅','sleep':'🌙','breakfast':'🍳','lunch':'🥗','dinner':'🍽️',
   'study':'📚','work':'💼','break':'☕','workout':'🏋️','exercise':'🚴',
   'reading':'📖','meeting':'🤝','shower':'🚿','walk':'🚶','meditation':'🧘',
-  'prayer':'🤲','call':'📞','email':'📧','writing':'✍️','coding':'💻'
-};
-function getEmoji(name){
-  const l=name.toLowerCase();
-  for(const k in EMOJIS) if(l.includes(k)) return EMOJIS[k];
-  return '⏱️';
-}
-function load(k){try{const d=localStorage.getItem(k);return d?JSON.parse(d):null}catch{return null}}
-function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  'prayer':'🤲','call':'📞','email':'📧','writing':'✍️','coding':'💻','exam':'📝'};
+function getEmoji(n){const l=n.toLowerCase();for(const k in EMOJIS)if(l.includes(k))return EMOJIS[k];return'⏱️'}
+function ld(k){try{const d=localStorage.getItem(k);return d?JSON.parse(d):null}catch{return null}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 function nowSec(){return Math.floor(Date.now()/1000)}
 function todayStr(){return new Date().toISOString().slice(0,10)}
+function uid(){return Date.now()+'_'+Math.random().toString(36).slice(2,6)}
+
 function fmt(sec){
   if(sec<=0)return'0:00';
   const m=Math.floor(sec/60),s=sec%60;
@@ -190,111 +185,173 @@ function fmtMins(min){
   if(!min||min<=0)return'0m';
   return min>=60?Math.floor(min/60)+'h'+(min%60?' '+min%60+'m':''):min+'m';
 }
-function uid(){return Date.now()+'_'+Math.random().toString(36).slice(2,7)}
+// Format unix timestamp as HH:MM
+function fmtTime(ts){
+  if(!ts)return'--:--';
+  const d=new Date(ts*1000);
+  const h=d.getHours(),m=d.getMinutes();
+  return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
+}
+// Parse "HH:MM" string to today's unix timestamp
+function parseTimeStr(str){
+  if(!str)return null;
+  const [hh,mm]=str.split(':').map(Number);
+  if(isNaN(hh)||isNaN(mm))return null;
+  const d=new Date();d.setHours(hh,mm,0,0);
+  return Math.floor(d.getTime()/1000);
+}
+// Compute scheduled start times for all tasks based on first task's startAt
+function computeScheduledTimes(tasks){
+  // Returns array of {start,end} unix timestamps
+  const out=[];
+  let cursor=null;
+  for(let i=0;i<tasks.length;i++){
+    const t=tasks[i];
+    if(i===0){cursor=t.startAt||null;}
+    else{cursor=out[i-1]?out[i-1].end:null;}
+    out.push({start:cursor,end:cursor?cursor+t.dur*60:null});
+  }
+  return out;
+}
 
-// ─── DEFAULT TEMPLATES ─────────────────────────────────────────────────────────
+// ─── DEFAULT TEMPLATES ───────────────────────────────────────────────────────
 const DEFAULT_TEMPLATES=[
   {id:'t1',name:'Full Day',tasks:[
     {name:'Wake Up',dur:10},{name:'Breakfast',dur:20},{name:'Study',dur:90},
     {name:'Break',dur:15},{name:'Workout',dur:45},{name:'Lunch',dur:30},
-    {name:'Reading',dur:30},{name:'Dinner',dur:30},{name:'Sleep',dur:480}
-  ]},
+    {name:'Reading',dur:30},{name:'Dinner',dur:30},{name:'Sleep',dur:480}]},
   {id:'t2',name:'Work Day',tasks:[
     {name:'Wake Up',dur:10},{name:'Breakfast',dur:20},{name:'Work',dur:120},
     {name:'Break',dur:15},{name:'Work',dur:120},{name:'Lunch',dur:45},
     {name:'Work',dur:90},{name:'Break',dur:15},{name:'Dinner',dur:30},
-    {name:'Reading',dur:20},{name:'Sleep',dur:480}
-  ]},
+    {name:'Reading',dur:20},{name:'Sleep',dur:480}]},
   {id:'t3',name:'Rest Day',tasks:[
     {name:'Wake Up',dur:10},{name:'Breakfast',dur:30},{name:'Walk',dur:60},
     {name:'Reading',dur:60},{name:'Lunch',dur:45},{name:'Meditation',dur:30},
-    {name:'Dinner',dur:45},{name:'Reading',dur:30},{name:'Sleep',dur:480}
-  ]}
+    {name:'Dinner',dur:45},{name:'Reading',dur:30},{name:'Sleep',dur:480}]}
 ];
 
-// ─── STATE ─────────────────────────────────────────────────────────────────────
+// ─── STATE ───────────────────────────────────────────────────────────────────
 let S={
-  screen:'focus',
-  today:null,
-  tomorrow:null,
-  templates:load('templates')||DEFAULT_TEMPLATES,
-  paused:false,
-  pausedAt:null,
-  pausedSecondsLeft:null,
-  currentIdx:0,
-  recoveryShown:false
+  screen:'focus',today:null,tomorrow:null,
+  templates:ld('templates')||DEFAULT_TEMPLATES,
+  paused:false,pausedAt:null,pausedSecondsLeft:null,
+  currentIdx:0,recoveryShown:false,
+  selectMode:false,selectedTasks:new Set(),
+  notifGranted:false
 };
+let deferredInstall=null;
+let tickInterval=null;
+// Modal-local state
+let editingIdx=-1,qbTarget='today',qbTasks=[],newTmplTasks=[];
+let conflictData=null; // {newTask, existingIdx, insertAfterIdx}
 
 function initState(){
-  const saved=load('today');
+  const saved=ld('today');
   if(saved&&saved.date===todayStr()){
-    S.today=saved;
-    S.currentIdx=saved.currentIdx||0;
-    S.paused=saved.paused||false;
-    S.pausedAt=saved.pausedAt||null;
+    S.today=saved;S.currentIdx=saved.currentIdx||0;
+    S.paused=saved.paused||false;S.pausedAt=saved.pausedAt||null;
     S.pausedSecondsLeft=saved.pausedSecondsLeft!=null?saved.pausedSecondsLeft:null;
   }
-  S.tomorrow=load('tomorrow');
+  S.tomorrow=ld('tomorrow');
+  S.notifGranted=(Notification&&Notification.permission==='granted');
 }
 function saveToday(){
   if(!S.today)return;
-  save('today',{...S.today,date:todayStr(),currentIdx:S.currentIdx,
+  sv('today',{...S.today,date:todayStr(),currentIdx:S.currentIdx,
     paused:S.paused,pausedAt:S.pausedAt,pausedSecondsLeft:S.pausedSecondsLeft});
 }
-function getCurrentTask(){return S.today?S.today.tasks[S.currentIdx]||null:null}
-function getNextTask(){return S.today?S.today.tasks[S.currentIdx+1]||null:null}
+function cur(){return S.today?S.today.tasks[S.currentIdx]||null:null}
+function nxt(){return S.today?S.today.tasks[S.currentIdx+1]||null:null}
+
 function getSecondsLeft(){
-  const t=getCurrentTask();
-  if(!t||!t.startAt)return t?t.dur*60:0;
+  const t=cur();
+  if(!t)return 0;
   if(S.paused&&S.pausedSecondsLeft!=null)return S.pausedSecondsLeft;
+  if(!t.startAt)return t.dur*60;
   return Math.max(0,t.dur*60-(nowSec()-t.startAt));
 }
+
+// FIX #5: Correct behind-schedule calculation
+// Behind = how many seconds the current task started AFTER its planned start
 function getSecondsBehind(){
   if(!S.today||!S.today.tasks.length||!S.today.startedAt)return 0;
-  let expected=S.today.startedAt;
-  for(let i=0;i<S.currentIdx;i++) expected+=S.today.tasks[i].dur*60;
-  const t=getCurrentTask();
-  const taskStart=t&&t.startAt?t.startAt:nowSec();
-  return Math.max(0,taskStart-expected);
+  const t=cur();
+  if(!t||!t.startAt)return 0;
+  // Planned start of current task = startedAt + sum of durations of all prior tasks
+  let plannedStart=S.today.startedAt;
+  for(let i=0;i<S.currentIdx;i++) plannedStart+=S.today.tasks[i].dur*60;
+  return Math.max(0,t.startAt-plannedStart);
 }
+
 function startCurrentTask(){
-  const t=getCurrentTask();
-  if(!t)return;
+  const t=cur();if(!t)return;
   t.startAt=nowSec();
   S.paused=false;S.pausedAt=null;S.pausedSecondsLeft=null;
   saveToday();
 }
+
 function advanceTask(){
   if(!S.today)return;
-  const t=getCurrentTask();
-  if(t)t.done=true;
-  S.currentIdx++;
-  S.recoveryShown=false;
+  const t=cur();if(t)t.done=true;
+  S.currentIdx++;S.recoveryShown=false;
   if(S.currentIdx>=S.today.tasks.length){saveToday();render();return;}
-  const next=getCurrentTask();
-  if(next&&next.name.toLowerCase()==='sleep'){
-    next.startAt=nowSec();saveToday();render();return;
-  }
+  const next=cur();
+  if(next&&next.name.toLowerCase()==='sleep'){next.startAt=nowSec();saveToday();render();return;}
   startCurrentTask();saveToday();render();
 }
 
-// ─── RENDER ─────────────────────────────────────────────────────────────────────
-let tickInterval=null;
-let editingIdx=-1;
-let qbTarget='today';
-let qbTasks=[];
-let newTmplTasks=[];
-let deferredInstall=null;
+// FIX #5: Shift remaining tasks - adjusts startedAt so all future tasks shift correctly
+function shiftRemaining(seconds){
+  if(!S.today)return;
+  // Shift startedAt of today forward by 'seconds' so all planned times move
+  // But we only want to shift tasks AFTER current, so we adjust the current task's startAt
+  const t=cur();
+  if(t&&t.startAt) t.startAt+=seconds;
+  saveToday();
+}
 
+// ─── NOTIFICATIONS ──────────────────────────────────────────────────────────
+async function requestNotifPermission(){
+  if(!('Notification' in window))return;
+  const p=await Notification.requestPermission();
+  S.notifGranted=(p==='granted');
+  render();
+}
+function sendNotif(title,body){
+  if(!S.notifGranted||!('Notification' in window))return;
+  try{
+    if(navigator.serviceWorker&&navigator.serviceWorker.controller){
+      navigator.serviceWorker.ready.then(reg=>{
+        reg.showNotification(title,{body,icon:'./icon-192.png',badge:'./icon-192.png',
+          vibrate:[200,100,200],tag:'axis-task',renotify:true});
+      });
+    } else {
+      new Notification(title,{body,icon:'./icon-192.png'});
+    }
+  }catch(e){}
+}
+
+// ─── CONFLICT DETECTION ─────────────────────────────────────────────────────
+// Check if inserting a task at position `afterIdx` with duration `dur` overlaps with existing tasks
+// Returns index of conflicting task or -1
+function findConflict(afterIdx,newDurMins,tasks){
+  if(!tasks||!tasks.length)return -1;
+  const times=computeScheduledTimes(tasks);
+  // The new task would slot in at afterIdx+1
+  const insertPos=afterIdx+1;
+  const prevEnd=insertPos>0&&times[insertPos-1]?times[insertPos-1].end:null;
+  const nextStart=insertPos<times.length&&times[insertPos]?times[insertPos].start:null;
+  if(!prevEnd||!nextStart)return -1;
+  const newEnd=prevEnd+newDurMins*60;
+  if(newEnd>nextStart) return insertPos; // conflicts with task at insertPos
+  return -1;
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────────────────
 function render(){
   const app=document.getElementById('app');
-  app.innerHTML=`
-    <div style="display:flex;flex-direction:column;height:100%">
-      ${renderScreen()}
-      ${renderNav()}
-    </div>
-    ${renderModals()}
-  `;
+  app.innerHTML=`<div style="display:flex;flex-direction:column;height:100%">${renderScreen()}${renderNav()}</div>${renderModals()}`;
   startTick();
 }
 
@@ -309,34 +366,28 @@ function renderNav(){
 }
 
 function renderScreen(){
-  const map={focus:renderFocus,schedule:renderSchedule,plan:renderPlan,templates:renderTemplates};
-  return (map[S.screen]||renderFocus)();
+  return ({focus:renderFocus,schedule:renderSchedule,plan:renderPlan,templates:renderTemplates}[S.screen]||renderFocus)();
 }
 
-// FOCUS
+// ── FOCUS SCREEN ─────────────────────────────────────────────────────────────
 function renderFocus(){
-  const t=getCurrentTask();
-  const next=getNextTask();
+  const t=cur(),next=nxt();
   const behind=getSecondsBehind();
   const isDone=S.today&&S.currentIdx>=S.today.tasks.length;
   const isSleep=t&&t.name.toLowerCase()==='sleep';
 
-  if(isDone) return `<div class="screen active">
-    <div class="day-done">
-      <div style="font-size:60px">🌙</div>
-      <h2>Day Complete</h2>
-      <p>Great work. Rest well.<br>Plan tomorrow from the Plan tab.</p>
-      <button class="btn btn-primary" onclick="go('plan')" style="margin-top:8px">Plan Tomorrow →</button>
-    </div>
-  </div>`;
+  if(isDone) return `<div class="screen active"><div class="day-done">
+    <div style="font-size:56px">🌙</div><h2>Day Complete</h2>
+    <p>Great work. Rest well.<br>Plan tomorrow from the Plan tab.</p>
+    <button class="btn btn-primary" onclick="go('plan')" style="margin-top:10px">Plan Tomorrow →</button>
+  </div></div>`;
 
   if(!S.today||!S.today.tasks.length) return `<div class="screen active">
     <div class="focus-header">
-      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px">
-        <svg width="28" height="28" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="#0a0a0f"/><circle cx="256" cy="256" r="180" fill="none" stroke="#7c6df0" stroke-width="22"/><circle cx="256" cy="256" r="32" fill="#7c6df0"/><line x1="256" y1="56" x2="256" y2="160" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/><line x1="256" y1="352" x2="256" y2="456" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/><line x1="56" y1="256" x2="160" y2="256" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/><line x1="352" y1="256" x2="456" y2="256" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/><circle cx="256" cy="256" r="10" fill="#fff"/></svg>
-        <span style="font-size:22px;font-weight:800;letter-spacing:-0.5px">Axis</span>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px">
+        ${axisIconSVG(26)}<span style="font-size:20px;font-weight:800;letter-spacing:-.5px">Axis</span>
       </div>
-      <div style="font-size:13px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">One Thing at a Time</div>
+      <div style="font-size:12px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase">One Thing at a Time</div>
     </div>
     <div class="empty-state">
       <div class="empty-icon">📋</div>
@@ -346,36 +397,45 @@ function renderFocus(){
     </div>
   </div>`;
 
+  if(isSleep) return `<div class="screen active"><div class="day-done">
+    <div style="font-size:56px">🌙</div>
+    <div style="font-size:18px;font-weight:700">Sleep time</div>
+    <div style="font-size:13px;color:var(--muted)">Rest well. Tomorrow is waiting.</div>
+    ${S.tomorrow&&S.tomorrow.tasks&&S.tomorrow.tasks.length
+      ?`<button class="btn btn-primary" onclick="startTomorrow()" style="margin-top:10px">Wake Up — Start Tomorrow</button>`
+      :`<button class="btn btn-primary" onclick="go('plan')" style="margin-top:10px">Plan Tomorrow</button>`}
+  </div></div>`;
+
   const sec=getSecondsLeft();
   const totalSec=t?t.dur*60:1;
-  const progress=t?Math.max(0,Math.min(1,1-(sec/totalSec))):0;
-  const circ=565;
-  const offset=circ-(progress*circ);
+  const progress=Math.max(0,Math.min(1,1-(sec/totalSec)));
+  const offset=565-(progress*565);
   const ringColor=sec<120?'var(--red)':sec<300?'var(--amber)':'var(--accent)';
 
-  if(isSleep) return `<div class="screen active">
-    <div class="day-done">
-      <div style="font-size:60px">🌙</div>
-      <div style="font-size:18px;font-weight:700">Sleep time</div>
-      <div style="font-size:13px;color:var(--muted)">Rest well. Tomorrow is waiting.</div>
-      ${S.tomorrow&&S.tomorrow.tasks&&S.tomorrow.tasks.length
-        ?`<button class="btn btn-primary" onclick="startTomorrow()" style="margin-top:8px">Wake Up — Start Tomorrow</button>`
-        :`<button class="btn btn-primary" onclick="go('plan')" style="margin-top:8px">Wake Up — Plan Tomorrow</button>`}
-    </div>
-  </div>`;
+  // Compute scheduled end time for current task
+  const times=computeScheduledTimes(S.today.tasks);
+  const curTimes=times[S.currentIdx];
+  const startStr=t&&t.startAt?fmtTime(t.startAt):'--:--';
+  const endStr=t&&t.startAt?fmtTime(t.startAt+t.dur*60):'--:--';
+  const nextTimes=nxt()&&times[S.currentIdx+1]?times[S.currentIdx+1]:null;
 
-  return `<div class="screen active" style="padding-top:calc(var(--safe-top) + 8px)">
+  return `<div class="screen active" style="padding-top:calc(var(--safe-top) + 6px)">
     <div class="focus-header">
       <div class="focus-status">${S.paused?'PAUSED':'NOW DOING'}</div>
       <div class="focus-task">${t?t.name:'—'}</div>
+      <div class="focus-times">${startStr} → ${endStr} · ${fmtMins(t?t.dur:0)}</div>
     </div>
     ${behind>120&&!S.recoveryShown?`
     <div class="behind-banner" onclick="openRecovery()">
       <div class="behind-title">⚠️ ${Math.round(behind/60)} min behind schedule</div>
-      <div class="behind-sub">Tap to choose how to recover →</div>
+      <div class="behind-sub">Tap to recover →</div>
+    </div>`:''}
+    ${!S.notifGranted?`<div class="notif-banner">
+      <p>Enable notifications to get alerted when tasks end.</p>
+      <button onclick="requestNotifPermission()">Enable</button>
     </div>`:''}
     <div class="timer-ring-wrap">
-      <svg width="196" height="196" viewBox="0 0 200 200">
+      <svg width="190" height="190" viewBox="0 0 200 200">
         <circle class="track" cx="100" cy="100" r="90"/>
         <circle class="prog" id="ring-prog" cx="100" cy="100" r="90"
           style="stroke:${ringColor};stroke-dashoffset:${offset}"/>
@@ -390,13 +450,13 @@ function renderFocus(){
       <div>
         <div class="next-label">Up Next</div>
         <div class="next-name">${next.name}</div>
-        <div class="next-dur">${fmtMins(next.dur)}</div>
+        <div class="next-time">${nextTimes&&nextTimes.start?fmtTime(nextTimes.start)+' → '+fmtTime(nextTimes.end):''} · ${fmtMins(next.dur)}</div>
       </div>
-    </div>`:`<div style="height:12px"></div>`}
+    </div>`:`<div style="height:8px"></div>`}
     <div class="action-row">
       ${S.paused
-        ?`<button class="btn btn-primary" onclick="resumeTask()">▶ Resume</button>`
-        :`<button class="btn btn-primary" onclick="pauseTask()">⏸ Pause</button>`}
+        ?`<button class="btn btn-primary" style="flex:1" onclick="resumeTask()">▶ Resume</button>`
+        :`<button class="btn btn-primary" style="flex:1" onclick="pauseTask()">⏸ Pause</button>`}
       <button class="btn btn-secondary btn-sm" onclick="skipTask()">Skip →</button>
     </div>
     <div class="quick-actions">
@@ -406,75 +466,89 @@ function renderFocus(){
   </div>`;
 }
 
-// SCHEDULE
+// ── SCHEDULE SCREEN ──────────────────────────────────────────────────────────
 function renderSchedule(){
   if(!S.today||!S.today.tasks.length) return `<div class="screen active">
     <div class="screen-header"><span class="screen-title">Today</span>
       <button class="btn btn-primary btn-sm" onclick="go('plan')">+ Plan</button></div>
-    <div class="empty-state">
-      <div class="empty-icon">📋</div>
-      <div class="empty-title">No schedule yet</div>
-    </div>
+    <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No schedule yet</div></div>
   </div>`;
+
+  const times=computeScheduledTimes(S.today.tasks);
+  const selCount=S.selectedTasks.size;
+
   return `<div class="screen active">
     <div class="screen-header">
       <span class="screen-title">Today</span>
-      <button class="btn btn-secondary btn-sm" onclick="openInsert()">+ Add</button>
+      <div style="display:flex;gap:6px">
+        ${S.selectMode
+          ?`<button class="btn btn-success btn-sm" onclick="saveSelectedAsTemplate()" ${selCount<1?'disabled':''}>Save Template (${selCount})</button>
+             <button class="btn btn-ghost btn-sm" onclick="exitSelectMode()">Cancel</button>`
+          :`<button class="btn btn-ghost btn-sm" onclick="enterSelectMode()">Select</button>
+             <button class="btn btn-secondary btn-sm" onclick="openInsert()">+ Add</button>`}
+      </div>
     </div>
+    ${S.selectMode?`<div style="font-size:12px;color:var(--muted);margin-bottom:10px;flex-shrink:0">Tap tasks to select them, then save as a template.</div>`:''}
     <div class="scroll-area">
-      ${S.today.tasks.map((t,i)=>`
-        <div class="task-item ${i===S.currentIdx?'current':''} ${t.done?'done':''}">
-          <div class="task-order">${i===S.currentIdx?'▶':i+1}</div>
+      ${S.today.tasks.map((t,i)=>{
+        const ts=times[i];
+        const startStr=ts&&ts.start?fmtTime(ts.start):'--:--';
+        const endStr=ts&&ts.end?fmtTime(ts.end):'--:--';
+        const isSel=S.selectedTasks.has(i);
+        return `<div class="task-item ${i===S.currentIdx?'current':''} ${t.done?'done':''} ${S.selectMode&&isSel?'selected':''}"
+          onclick="${S.selectMode?`toggleSelect(${i})`:''}" style="${S.selectMode?'cursor:pointer':''}">
+          ${S.selectMode?`<div class="select-check ${isSel?'on':''}">${isSel?'✓':''}</div>`
+            :`<div class="task-order">${i===S.currentIdx?'▶':i+1}</div>`}
           <div class="task-emoji">${getEmoji(t.name)}</div>
           <div class="task-info">
             <div class="task-name-txt">${t.name}</div>
-            <div class="task-dur-txt">${fmtMins(t.dur)}</div>
+            <div class="task-time-txt">${startStr} → ${endStr} · ${fmtMins(t.dur)}</div>
           </div>
-          <div class="task-actions">
-            ${!t.done?`<button class="icon-btn" onclick="openEdit(${i})">✏️</button>
-            <button class="icon-btn" onclick="deleteTask(${i})">🗑</button>`:''}
-          </div>
-        </div>`).join('')}
+          ${!S.selectMode&&!t.done?`<div class="task-actions">
+            <button class="icon-btn" onclick="openEdit(${i})">✏️</button>
+            <button class="icon-btn" onclick="deleteTask(${i})">🗑</button>
+          </div>`:''}
+        </div>`;
+      }).join('')}
     </div>
   </div>`;
 }
 
-// PLAN
+// ── PLAN SCREEN ──────────────────────────────────────────────────────────────
 function renderPlan(){
   const tom=S.tomorrow;
   return `<div class="screen active">
     <div class="screen-header"><span class="screen-title">Plan</span></div>
     <div class="scroll-area">
-      ${deferredInstall?`
-      <div class="install-banner">
+      ${deferredInstall?`<div class="install-banner">
         <p>Add Axis to your home screen for the full app experience.</p>
         <button onclick="installApp()">Install</button>
       </div>`:''}
       <div class="section-label">Today</div>
       ${!S.today||!S.today.tasks.length
-        ?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
-          <button class="btn btn-primary btn-sm" onclick="openBuild('today')">Build Schedule</button>
-          <button class="btn btn-ghost btn-sm" onclick="openFromTmpl('today')">Use Template</button>
-        </div>`
+        ?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+            <button class="btn btn-primary btn-sm" onclick="openBuild('today')">Build Schedule</button>
+            <button class="btn btn-ghost btn-sm" onclick="openFromTmpl('today')">Use Template</button>
+          </div>`
         :`<div style="font-size:13px;color:var(--green);margin-bottom:6px">✓ ${S.today.tasks.length} tasks scheduled</div>
-        <button class="btn btn-ghost btn-sm" style="margin-bottom:20px" onclick="clearToday()">Clear Today</button>`}
+          <button class="btn btn-ghost btn-sm" style="margin-bottom:18px" onclick="clearToday()">Clear Today</button>`}
       <div class="divider"></div>
-      <div class="section-label" style="margin-top:14px">Tomorrow</div>
+      <div class="section-label" style="margin-top:12px">Tomorrow</div>
       ${!tom||!tom.tasks||!tom.tasks.length
         ?`<div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-primary btn-sm" onclick="openBuild('tomorrow')">Plan Tomorrow</button>
-          <button class="btn btn-ghost btn-sm" onclick="openFromTmpl('tomorrow')">Use Template</button>
-        </div>`
+            <button class="btn btn-primary btn-sm" onclick="openBuild('tomorrow')">Plan Tomorrow</button>
+            <button class="btn btn-ghost btn-sm" onclick="openFromTmpl('tomorrow')">Use Template</button>
+          </div>`
         :`<div style="font-size:13px;color:var(--accent2);margin-bottom:8px">✓ ${tom.tasks.length} tasks ready</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-success btn-sm" onclick="startTomorrow()">Start Tomorrow Now</button>
-          <button class="btn btn-ghost btn-sm" onclick="clearTomorrow()">Clear</button>
-        </div>`}
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-success btn-sm" onclick="startTomorrow()">Start Tomorrow Now</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearTomorrow()">Clear</button>
+          </div>`}
     </div>
   </div>`;
 }
 
-// TEMPLATES
+// ── TEMPLATES SCREEN ─────────────────────────────────────────────────────────
 function renderTemplates(){
   return `<div class="screen active">
     <div class="screen-header">
@@ -484,35 +558,50 @@ function renderTemplates(){
     <div class="scroll-area">
       ${S.templates.map((t,i)=>`
         <div class="template-card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
             <h3>${t.name}</h3>
-            <div style="display:flex;gap:6px">
+            <div style="display:flex;gap:5px">
               <button class="btn btn-success btn-sm" onclick="useTmpl(${i},'today')">▶ Today</button>
               <button class="icon-btn" onclick="deleteTmpl(${i})">🗑</button>
             </div>
           </div>
           <div class="template-preview">${t.tasks.slice(0,5).map(tk=>`${tk.name} (${fmtMins(tk.dur)})`).join(' → ')}${t.tasks.length>5?' → …':''}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:6px">${t.tasks.length} tasks · ${fmtMins(t.tasks.reduce((a,b)=>a+b.dur,0))}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px">${t.tasks.length} tasks · ${fmtMins(t.tasks.reduce((a,b)=>a+b.dur,0))}</div>
         </div>`).join('')}
     </div>
   </div>`;
 }
 
-// MODALS
+// ── MODALS ───────────────────────────────────────────────────────────────────
 function renderModals(){
   return `
+  <!-- TASK EDIT/INSERT MODAL -->
   <div class="modal-overlay" id="taskModal">
     <div class="modal">
       <div class="modal-title" id="taskModalTitle">Add Task</div>
-      <input class="input-field" id="taskName" placeholder="Task name">
-      <div class="input-row">
-        <label style="font-size:12px;color:var(--muted);width:80px;flex-shrink:0">Duration</label>
-        <input class="input-field" id="taskDur" type="number" min="1" max="480" placeholder="minutes" style="flex:1;margin:0">
-        <span style="color:var(--muted);font-size:12px;margin-left:8px">min</span>
+      <div class="input-row"><span class="input-label">Name</span>
+        <input class="input-field" id="taskName" placeholder="e.g. Study" style="flex:1;margin:0"></div>
+      <div class="input-row"><span class="input-label">Duration</span>
+        <div class="row-group">
+          <input class="input-field" id="taskDur" type="number" min="1" max="720" placeholder="min" style="flex:1;margin:0">
+          <span style="color:var(--muted);font-size:12px">min</span>
+        </div>
       </div>
-      <div id="insertRow" style="display:none">
-        <div class="input-row">
-          <label style="font-size:12px;color:var(--muted);width:80px;flex-shrink:0">Insert after</label>
+      <div class="input-row"><span class="input-label">Start time</span>
+        <div class="row-group">
+          <input class="input-field" id="taskStart" type="time" placeholder="HH:MM" style="flex:1;margin:0">
+          <span style="font-size:11px;color:var(--muted)">optional</span>
+        </div>
+      </div>
+      <div class="input-row"><span class="input-label">End time</span>
+        <div class="row-group">
+          <input class="input-field" id="taskEnd" type="time" placeholder="HH:MM" style="flex:1;margin:0">
+          <span style="font-size:11px;color:var(--muted)">optional</span>
+        </div>
+      </div>
+      <div class="form-hint" id="taskCalcHint" style="display:none"></div>
+      <div id="insertRow" style="display:none;margin-bottom:9px">
+        <div class="input-row" style="margin:0"><span class="input-label">After</span>
           <select class="input-field" id="insertAfter" style="flex:1;margin:0"></select>
         </div>
       </div>
@@ -523,37 +612,60 @@ function renderModals(){
     </div>
   </div>
 
-  <div class="modal-overlay" id="recoveryModal">
+  <!-- CONFLICT MODAL -->
+  <div class="modal-overlay" id="conflictModal">
     <div class="modal">
-      <div class="modal-title">⚠️ Behind Schedule</div>
-      <div id="recoveryInfo" style="font-size:13px;color:var(--muted);margin-bottom:16px"></div>
-      <div class="recovery-option" onclick="recoverContinue()">
-        <h4>Continue as planned</h4>
-        <p>Keep going. Schedule stays unchanged.</p>
+      <div class="modal-title">⚡ Time Conflict</div>
+      <div id="conflictInfo" style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5"></div>
+      <div class="conflict-option" onclick="conflictEditNew()">
+        <h4>Edit the new task's time</h4>
+        <p>Go back and adjust the duration of the task you're adding.</p>
       </div>
-      <div class="recovery-option" onclick="recoverSkip()">
-        <h4>Skip missed tasks</h4>
-        <p>Remove overdue tasks and continue from now.</p>
+      <div class="conflict-option" onclick="conflictEditExisting()">
+        <h4>Edit the existing task's time</h4>
+        <p>Adjust the duration of the task already in the schedule.</p>
       </div>
-      <div class="recovery-option" onclick="recoverShift()">
-        <h4>Shift everything forward</h4>
-        <p>Push all remaining tasks forward by the delay.</p>
+      <div class="conflict-option" onclick="conflictDeleteNew()">
+        <h4>Delete the new task</h4>
+        <p>Discard the task you were adding.</p>
       </div>
-      <div class="recovery-option" onclick="recoverEdit()">
-        <h4>Rebuild today manually</h4>
-        <p>Open schedule editor to plan the rest of the day.</p>
+      <div class="conflict-option" onclick="conflictDeleteExisting()">
+        <h4>Delete the existing task</h4>
+        <p>Remove the conflicting task from the schedule.</p>
       </div>
-      <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="closeModal('recoveryModal')">Dismiss</button>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="closeModal('conflictModal')">Cancel</button>
     </div>
   </div>
 
+  <!-- RECOVERY MODAL -->
+  <div class="modal-overlay" id="recoveryModal">
+    <div class="modal">
+      <div class="modal-title">⚠️ Behind Schedule</div>
+      <div id="recoveryInfo" style="font-size:13px;color:var(--muted);margin-bottom:14px"></div>
+      <div class="recovery-option" onclick="recoverContinue()">
+        <h4>Continue as planned</h4><p>Keep going. Schedule stays unchanged.</p>
+      </div>
+      <div class="recovery-option" onclick="recoverSkip()">
+        <h4>Skip missed tasks</h4><p>Remove overdue tasks and continue from now.</p>
+      </div>
+      <div class="recovery-option" onclick="recoverShift()">
+        <h4>Shift everything forward</h4><p>Push all remaining tasks forward by the delay.</p>
+      </div>
+      <div class="recovery-option" onclick="recoverEdit()">
+        <h4>Rebuild today manually</h4><p>Open schedule editor to edit the rest of the day.</p>
+      </div>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="closeModal('recoveryModal')">Dismiss</button>
+    </div>
+  </div>
+
+  <!-- BUILD SCHEDULE MODAL -->
   <div class="modal-overlay" id="buildModal">
     <div class="modal">
       <div class="modal-title" id="buildTitle">Build Schedule</div>
-      <div id="buildList" style="max-height:240px;overflow-y:auto;margin-bottom:12px"></div>
-      <div style="display:flex;gap:6px;margin-bottom:12px">
+      <div id="buildList" style="max-height:220px;overflow-y:auto;margin-bottom:10px"></div>
+      <div style="display:flex;gap:5px;margin-bottom:10px">
         <input class="input-field" id="bName" placeholder="Task name" style="flex:1;margin:0">
-        <input class="input-field" id="bDur" type="number" placeholder="min" style="width:68px;margin:0">
+        <input class="input-field" id="bDur" type="number" placeholder="min" style="width:62px;margin:0">
         <button class="btn btn-primary btn-sm" onclick="addBTask()">+</button>
       </div>
       <div style="display:flex;gap:8px">
@@ -563,14 +675,15 @@ function renderModals(){
     </div>
   </div>
 
+  <!-- NEW TEMPLATE MODAL -->
   <div class="modal-overlay" id="tmplModal">
     <div class="modal">
-      <div class="modal-title">New Template</div>
+      <div class="modal-title" id="tmplModalTitle">New Template</div>
       <input class="input-field" id="tmplName" placeholder="Template name">
-      <div id="tmplList" style="max-height:180px;overflow-y:auto;margin-bottom:10px"></div>
-      <div style="display:flex;gap:6px;margin-bottom:10px">
+      <div id="tmplList" style="max-height:180px;overflow-y:auto;margin-bottom:9px"></div>
+      <div style="display:flex;gap:5px;margin-bottom:9px">
         <input class="input-field" id="tName" placeholder="Task name" style="flex:1;margin:0">
-        <input class="input-field" id="tDur" type="number" placeholder="min" style="width:68px;margin:0">
+        <input class="input-field" id="tDur" type="number" placeholder="min" style="width:62px;margin:0">
         <button class="btn btn-primary btn-sm" onclick="addTmplTask()">+</button>
       </div>
       <div style="display:flex;gap:8px">
@@ -581,39 +694,38 @@ function renderModals(){
   </div>`;
 }
 
-// ─── ACTIONS ─────────────────────────────────────────────────────────────────
-function go(s){S.screen=s;render()}
-function closeModal(id){const el=document.getElementById(id);if(el)el.classList.remove('open')}
-
-function pauseTask(){
-  if(S.paused)return;
-  S.paused=true;S.pausedAt=nowSec();S.pausedSecondsLeft=getSecondsLeft();
-  saveToday();render();
+function axisIconSVG(size){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+    <rect width="512" height="512" rx="100" fill="#0a0a0f"/>
+    <circle cx="256" cy="256" r="180" fill="none" stroke="#7c6df0" stroke-width="22"/>
+    <circle cx="256" cy="256" r="32" fill="#7c6df0"/>
+    <line x1="256" y1="56" x2="256" y2="160" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/>
+    <line x1="256" y1="352" x2="256" y2="456" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/>
+    <line x1="56" y1="256" x2="160" y2="256" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/>
+    <line x1="352" y1="256" x2="456" y2="256" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="256" cy="256" r="10" fill="#fff"/>
+  </svg>`;
 }
-function resumeTask(){
-  if(!S.paused)return;
-  const t=getCurrentTask();
-  if(t){const elapsed=t.dur*60-S.pausedSecondsLeft;t.startAt=nowSec()-elapsed;}
-  S.paused=false;S.pausedAt=null;S.pausedSecondsLeft=null;
-  saveToday();render();
-}
-function skipTask(){if(confirm('Skip this task?'))advanceTask();}
-function endEarly(){advanceTask();}
 
+// ─── TASK MODAL LOGIC (Feature #1 — start/end time + duration calc) ──────────
 function openInsert(){
   editingIdx=-1;
   document.getElementById('taskModalTitle').textContent='Insert Task';
   document.getElementById('taskName').value='';
   document.getElementById('taskDur').value='';
+  document.getElementById('taskStart').value='';
+  document.getElementById('taskEnd').value='';
+  document.getElementById('taskCalcHint').style.display='none';
   const row=document.getElementById('insertRow');
   row.style.display='block';
   const sel=document.getElementById('insertAfter');
-  sel.innerHTML='<option value="-1">At beginning</option>';
+  sel.innerHTML='<option value="-1">At the beginning</option>';
   if(S.today)S.today.tasks.forEach((t,i)=>{
     const o=document.createElement('option');
-    o.value=i;o.textContent=`After ${t.name} (${i+1})`;sel.appendChild(o);
+    o.value=i;o.textContent=`After ${i+1}. ${t.name}`;sel.appendChild(o);
   });
   document.getElementById('taskModal').classList.add('open');
+  attachTimeCalc();
 }
 function openEdit(i){
   editingIdx=i;
@@ -621,64 +733,206 @@ function openEdit(i){
   document.getElementById('taskModalTitle').textContent='Edit Task';
   document.getElementById('taskName').value=t.name;
   document.getElementById('taskDur').value=t.dur;
+  // Show current start/end times
+  const times=computeScheduledTimes(S.today.tasks);
+  const ts=times[i];
+  if(ts&&ts.start){
+    const sd=new Date(ts.start*1000);
+    document.getElementById('taskStart').value=(sd.getHours()<10?'0':'')+sd.getHours()+':'+(sd.getMinutes()<10?'0':'')+sd.getMinutes();
+  } else document.getElementById('taskStart').value='';
+  document.getElementById('taskEnd').value='';
+  document.getElementById('taskCalcHint').style.display='none';
   document.getElementById('insertRow').style.display='none';
   document.getElementById('taskModal').classList.add('open');
+  attachTimeCalc();
 }
+// Live calculation: if start+end given → compute duration; if start+dur given → show end
+function attachTimeCalc(){
+  const durEl=document.getElementById('taskDur');
+  const startEl=document.getElementById('taskStart');
+  const endEl=document.getElementById('taskEnd');
+  const hint=document.getElementById('taskCalcHint');
+  function update(){
+    const startTs=parseTimeStr(startEl.value);
+    const endTs=parseTimeStr(endEl.value);
+    const dur=parseInt(durEl.value);
+    if(startTs&&endTs&&endTs>startTs){
+      const calc=Math.round((endTs-startTs)/60);
+      durEl.value=calc;
+      hint.textContent=`Duration calculated: ${fmtMins(calc)}`;
+      hint.style.display='block';
+    } else if(startTs&&dur>0){
+      const calcEnd=new Date((startTs+dur*60)*1000);
+      const eStr=(calcEnd.getHours()<10?'0':'')+calcEnd.getHours()+':'+(calcEnd.getMinutes()<10?'0':'')+calcEnd.getMinutes();
+      hint.textContent=`Task ends at ${eStr}`;
+      hint.style.display='block';
+    } else hint.style.display='none';
+  }
+  [durEl,startEl,endEl].forEach(el=>{
+    el.removeEventListener('input',update);
+    el.addEventListener('input',update);
+  });
+}
+
 function saveTask(){
   const name=document.getElementById('taskName').value.trim();
-  const dur=parseInt(document.getElementById('taskDur').value)||30;
-  if(!name)return;
+  let dur=parseInt(document.getElementById('taskDur').value);
+  const startVal=document.getElementById('taskStart').value;
+  const endVal=document.getElementById('taskEnd').value;
+  // Calculate duration from start/end if provided
+  const startTs=parseTimeStr(startVal);
+  const endTs=parseTimeStr(endVal);
+  if(startTs&&endTs&&endTs>startTs) dur=Math.round((endTs-startTs)/60);
+  if(!name){alert('Please enter a task name.');return;}
+  if(!dur||dur<1){alert('Please enter a duration (or start + end time).');return;}
+
   if(editingIdx>=0){
     S.today.tasks[editingIdx].name=name;
     S.today.tasks[editingIdx].dur=dur;
-  } else {
-    const after=parseInt(document.getElementById('insertAfter').value);
-    const task={id:uid(),name,dur,done:false,startAt:null};
-    if(after<0) S.today.tasks.unshift(task);
-    else S.today.tasks.splice(after+1,0,task);
-    if(after<S.currentIdx) S.currentIdx++;
+    saveToday();closeModal('taskModal');render();
+    return;
   }
+
+  // Inserting — check for conflict (Feature #3)
+  const afterIdx=parseInt(document.getElementById('insertAfter').value);
+  const tasks=S.today?S.today.tasks:[];
+  const conflictIdx=findConflict(afterIdx,dur,tasks);
+  if(conflictIdx>=0&&tasks[conflictIdx]){
+    // Store conflict data and show conflict modal
+    conflictData={newTask:{name,dur,startTs},afterIdx,conflictIdx};
+    document.getElementById('conflictInfo').innerHTML=
+      `<strong>${name}</strong> (${fmtMins(dur)}) overlaps with <strong>${tasks[conflictIdx].name}</strong> (${fmtMins(tasks[conflictIdx].dur)}).`;
+    closeModal('taskModal');
+    document.getElementById('conflictModal').classList.add('open');
+    return;
+  }
+  doInsertTask(name,dur,afterIdx,startTs);
+}
+
+function doInsertTask(name,dur,afterIdx,startTs){
+  if(!S.today)return;
+  const task={id:uid(),name,dur,done:false,startAt:null};
+  if(afterIdx<0) S.today.tasks.unshift(task);
+  else S.today.tasks.splice(afterIdx+1,0,task);
+  const insertedIdx=afterIdx<0?0:afterIdx+1;
+  if(insertedIdx<=S.currentIdx) S.currentIdx++;
+  // If start time given and it's the first task, update startedAt
+  if(startTs&&insertedIdx===0) S.today.startedAt=startTs;
   saveToday();closeModal('taskModal');render();
 }
+
+// Conflict resolution handlers (Feature #3)
+function conflictEditNew(){
+  closeModal('conflictModal');
+  // Re-open task modal
+  document.getElementById('taskName').value=conflictData.newTask.name;
+  document.getElementById('taskDur').value=conflictData.newTask.dur;
+  document.getElementById('taskModal').classList.add('open');
+  attachTimeCalc();
+}
+function conflictEditExisting(){
+  closeModal('conflictModal');
+  openEdit(conflictData.conflictIdx);
+}
+function conflictDeleteNew(){
+  conflictData=null;closeModal('conflictModal');render();
+}
+function conflictDeleteExisting(){
+  if(!conflictData)return;
+  S.today.tasks.splice(conflictData.conflictIdx,1);
+  if(conflictData.conflictIdx<=S.currentIdx) S.currentIdx=Math.max(0,S.currentIdx-1);
+  // Now insert the new task
+  const {name,dur,startTs}=conflictData.newTask;
+  doInsertTask(name,dur,conflictData.afterIdx,startTs);
+  conflictData=null;closeModal('conflictModal');
+}
+
+// ─── SELECT MODE (Feature #2) ─────────────────────────────────────────────
+function enterSelectMode(){S.selectMode=true;S.selectedTasks=new Set();render()}
+function exitSelectMode(){S.selectMode=false;S.selectedTasks=new Set();render()}
+function toggleSelect(i){
+  if(S.selectedTasks.has(i))S.selectedTasks.delete(i);
+  else S.selectedTasks.add(i);
+  // Re-render just the task items efficiently
+  render();
+}
+function saveSelectedAsTemplate(){
+  if(!S.selectedTasks.size){alert('Select at least one task.');return;}
+  const name=prompt('Template name:');
+  if(!name||!name.trim())return;
+  // Get selected tasks in order
+  const indices=[...S.selectedTasks].sort((a,b)=>a-b);
+  const tasks=indices.map(i=>({name:S.today.tasks[i].name,dur:S.today.tasks[i].dur}));
+  S.templates.push({id:uid(),name:name.trim(),tasks});
+  sv('templates',S.templates);
+  exitSelectMode();
+  alert(`Template "${name.trim()}" saved with ${tasks.length} tasks!`);
+}
+
+// ─── TASK ACTIONS ────────────────────────────────────────────────────────────
 function deleteTask(i){
   if(!confirm('Delete this task?'))return;
   S.today.tasks.splice(i,1);
   if(S.currentIdx>=S.today.tasks.length) S.currentIdx=Math.max(0,S.today.tasks.length-1);
   saveToday();render();
 }
+function pauseTask(){
+  if(S.paused)return;
+  S.paused=true;S.pausedAt=nowSec();S.pausedSecondsLeft=getSecondsLeft();
+  saveToday();render();
+}
+function resumeTask(){
+  if(!S.paused)return;
+  const t=cur();
+  if(t){const elapsed=t.dur*60-S.pausedSecondsLeft;t.startAt=nowSec()-elapsed;}
+  S.paused=false;S.pausedAt=null;S.pausedSecondsLeft=null;
+  saveToday();render();
+}
+function skipTask(){if(confirm('Skip this task?'))advanceTask();}
+function endEarly(){advanceTask();}
 
-// Recovery
+// ─── RECOVERY (Feature #5 fixed) ─────────────────────────────────────────────
 function openRecovery(){
   const b=getSecondsBehind();
-  document.getElementById('recoveryInfo').textContent=`You are about ${Math.round(b/60)} minutes behind schedule.`;
+  document.getElementById('recoveryInfo').textContent=
+    `You started the current task about ${Math.round(b/60)} minutes late.`;
   document.getElementById('recoveryModal').classList.add('open');
 }
-function recoverContinue(){S.recoveryShown=true;closeModal('recoveryModal');render()}
+function recoverContinue(){S.recoveryShown=true;closeModal('recoveryModal');render();}
 function recoverSkip(){
+  // Skip tasks that should have ended by now
   const now=nowSec();
-  let exp=S.today.startedAt||0;
+  let cursor=S.today.startedAt||0;
+  let newIdx=S.currentIdx;
   for(let i=0;i<S.today.tasks.length;i++){
-    exp+=S.today.tasks[i].dur*60;
-    if(exp>now){S.currentIdx=i;break;}
+    cursor+=S.today.tasks[i].dur*60;
+    if(cursor>now){newIdx=i;break;}
   }
-  startCurrentTask();saveToday();S.recoveryShown=true;closeModal('recoveryModal');render();
+  for(let i=S.currentIdx;i<newIdx;i++) S.today.tasks[i].done=true;
+  S.currentIdx=newIdx;
+  startCurrentTask();saveToday();
+  S.recoveryShown=true;closeModal('recoveryModal');render();
 }
 function recoverShift(){
-  const b=getSecondsBehind();
-  const t=getCurrentTask();
-  if(t&&t.startAt)t.startAt-=b;
+  // FIX #5: Shift by changing the current task's startAt to now
+  // This means all downstream scheduled times stay consistent
+  const t=cur();
+  if(t) t.startAt=nowSec();
+  // Also update startedAt so computeScheduledTimes works correctly for past tasks
+  // Recalculate startedAt based on new current task start
+  let newStartedAt=nowSec();
+  for(let i=0;i<S.currentIdx;i++) newStartedAt-=S.today.tasks[i].dur*60;
+  S.today.startedAt=newStartedAt;
   saveToday();S.recoveryShown=true;closeModal('recoveryModal');render();
 }
-function recoverEdit(){closeModal('recoveryModal');go('schedule')}
+function recoverEdit(){closeModal('recoveryModal');go('schedule');}
 
-// Build schedule
+// ─── BUILD SCHEDULE ──────────────────────────────────────────────────────────
 function openBuild(target){
   qbTarget=target;qbTasks=[];
   document.getElementById('buildTitle').textContent=target==='today'?"Build Today's Schedule":'Plan Tomorrow';
-  document.getElementById('bName').value='';
-  document.getElementById('bDur').value='';
-  renderBuildList();
-  document.getElementById('buildModal').classList.add('open');
+  document.getElementById('bName').value='';document.getElementById('bDur').value='';
+  renderBuildList();document.getElementById('buildModal').classList.add('open');
 }
 function openFromTmpl(target){
   if(!S.templates.length){alert('No templates yet. Create one first!');return;}
@@ -689,8 +943,7 @@ function openFromTmpl(target){
   if(!tmpl){alert('Invalid selection.');return;}
   qbTarget=target;qbTasks=tmpl.tasks.map(t=>({...t}));
   document.getElementById('buildTitle').textContent=target==='today'?"Build Today's Schedule":'Plan Tomorrow';
-  renderBuildList();
-  document.getElementById('buildModal').classList.add('open');
+  renderBuildList();document.getElementById('buildModal').classList.add('open');
 }
 function addBTask(){
   const n=document.getElementById('bName').value.trim();
@@ -700,15 +953,15 @@ function addBTask(){
   document.getElementById('bName').value='';document.getElementById('bDur').value='';
   renderBuildList();
 }
-function removeBTask(i){qbTasks.splice(i,1);renderBuildList()}
+function removeBTask(i){qbTasks.splice(i,1);renderBuildList();}
 function renderBuildList(){
   const el=document.getElementById('buildList');if(!el)return;
   el.innerHTML=qbTasks.length?qbTasks.map((t,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:10px;padding:10px 12px;margin-bottom:6px">
+    <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:10px;padding:9px 11px;margin-bottom:5px">
       <span style="flex:1;font-size:13px;font-weight:600">${t.name}</span>
       <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${fmtMins(t.dur)}</span>
-      <button onclick="removeBTask(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">✕</button>
-    </div>`).join(''):`<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">Add tasks above</div>`;
+      <button onclick="removeBTask(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 2px">✕</button>
+    </div>`).join(''):`<div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">Add tasks above</div>`;
 }
 function saveBuild(){
   if(!qbTasks.length){alert('Add at least one task!');return;}
@@ -717,20 +970,21 @@ function saveBuild(){
     S.today=sched;S.currentIdx=0;startCurrentTask();saveToday();
     closeModal('buildModal');go('focus');
   } else {
-    S.tomorrow=sched;save('tomorrow',sched);closeModal('buildModal');render();
+    S.tomorrow=sched;sv('tomorrow',sched);closeModal('buildModal');render();
   }
 }
 
-// Templates
+// ─── TEMPLATES ───────────────────────────────────────────────────────────────
 function useTmpl(i,target){
   const tmpl=S.templates[i];
   qbTarget=target;qbTasks=tmpl.tasks.map(t=>({...t}));
   document.getElementById('buildTitle').textContent=target==='today'?"Build Today's Schedule":'Plan Tomorrow';
   renderBuildList();document.getElementById('buildModal').classList.add('open');
 }
-function deleteTmpl(i){if(!confirm('Delete template?'))return;S.templates.splice(i,1);save('templates',S.templates);render()}
+function deleteTmpl(i){if(!confirm('Delete template?'))return;S.templates.splice(i,1);sv('templates',S.templates);render();}
 function openNewTemplate(){
   newTmplTasks=[];
+  document.getElementById('tmplModalTitle').textContent='New Template';
   document.getElementById('tmplName').value='';
   document.getElementById('tName').value='';document.getElementById('tDur').value='';
   renderTmplList();document.getElementById('tmplModal').classList.add('open');
@@ -743,12 +997,12 @@ function addTmplTask(){
   document.getElementById('tName').value='';document.getElementById('tDur').value='';
   renderTmplList();
 }
-function removeTmplTask(i){newTmplTasks.splice(i,1);renderTmplList()}
+function removeTmplTask(i){newTmplTasks.splice(i,1);renderTmplList();}
 function renderTmplList(){
   const el=document.getElementById('tmplList');if(!el)return;
   el.innerHTML=newTmplTasks.map((t,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px">
-      <span style="flex:1">${t.name}</span>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:5px;padding:8px 10px;background:var(--surface2);border-radius:8px">
+      <span style="flex:1;font-weight:600">${t.name}</span>
       <span style="color:var(--muted);font-family:'DM Mono',monospace">${fmtMins(t.dur)}</span>
       <button onclick="removeTmplTask(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer">✕</button>
     </div>`).join('');
@@ -757,36 +1011,39 @@ function saveTemplate(){
   const name=document.getElementById('tmplName').value.trim();
   if(!name||!newTmplTasks.length){alert('Add a name and at least one task.');return;}
   S.templates.push({id:uid(),name,tasks:newTmplTasks.map(t=>({...t}))});
-  save('templates',S.templates);closeModal('tmplModal');render();
+  sv('templates',S.templates);closeModal('tmplModal');render();
 }
 
-// Plan
-function clearToday(){if(!confirm('Clear today\'s schedule?'))return;S.today=null;S.currentIdx=0;localStorage.removeItem('today');render()}
-function clearTomorrow(){S.tomorrow=null;save('tomorrow',null);render()}
+// ─── PLAN ACTIONS ────────────────────────────────────────────────────────────
+function clearToday(){if(!confirm('Clear today\'s schedule?'))return;S.today=null;S.currentIdx=0;localStorage.removeItem('today');render();}
+function clearTomorrow(){S.tomorrow=null;sv('tomorrow',null);render();}
 function startTomorrow(){
   if(!S.tomorrow||!S.tomorrow.tasks||!S.tomorrow.tasks.length)return;
   S.today={tasks:S.tomorrow.tasks.map(t=>({...t,done:false,startAt:null})),startedAt:nowSec()};
-  S.currentIdx=0;S.tomorrow=null;save('tomorrow',null);
+  S.currentIdx=0;S.tomorrow=null;sv('tomorrow',null);
   startCurrentTask();saveToday();go('focus');
 }
 
-// PWA Install
+// ─── PWA INSTALL ─────────────────────────────────────────────────────────────
 function installApp(){
   if(!deferredInstall)return;
   deferredInstall.prompt();
-  deferredInstall.userChoice.then(()=>{deferredInstall=null;render()});
+  deferredInstall.userChoice.then(()=>{deferredInstall=null;render();});
 }
 
-// ─── TICK ─────────────────────────────────────────────────────────────────────
+// ─── TICK (Feature #4 — notifications) ──────────────────────────────────────
+let lastNotifTask=null;
 function startTick(){
   if(tickInterval)clearInterval(tickInterval);
   tickInterval=setInterval(()=>{
     if(S.screen!=='focus')return;
-    const t=getCurrentTask();
+    const t=cur();
     if(!t||S.paused||t.name.toLowerCase()==='sleep')return;
     const sec=getSecondsLeft();
+    // Update timer display
     const el=document.getElementById('timer-display');
     if(el)el.textContent=fmt(sec);
+    // Update ring
     const totalSec=t.dur*60;
     const progress=Math.max(0,Math.min(1,1-(sec/totalSec)));
     const ring=document.getElementById('ring-prog');
@@ -794,25 +1051,42 @@ function startTick(){
       ring.style.strokeDashoffset=565-(progress*565);
       ring.style.stroke=sec<120?'var(--red)':sec<300?'var(--amber)':'var(--accent)';
     }
-    if(sec<=0&&!S.paused) advanceTask();
+    // Task ended
+    if(sec<=0&&!S.paused){
+      // Send notification (Feature #4)
+      const taskName=t.name;
+      const nextTask=nxt();
+      if(lastNotifTask!==S.currentIdx){
+        lastNotifTask=S.currentIdx;
+        sendNotif(`⏱ ${taskName} is done!`,
+          nextTask?`Up next: ${nextTask.name} (${fmtMins(nextTask.dur)})`:'You\'re all done for now!');
+      }
+      advanceTask();
+    }
   },1000);
 }
 
-// ─── INIT ─────────────────────────────────────────────────────────────────────
-window.addEventListener('beforeinstallprompt',e=>{
-  e.preventDefault();deferredInstall=e;
-});
+// ─── INIT ────────────────────────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;});
+
+// Register service worker
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js',{scope:'./'})
+      .then(reg=>console.log('SW registered, scope:',reg.scope))
+      .catch(e=>console.warn('SW registration failed:',e));
+  });
 }
+
+function go(s){S.screen=s;render();}
+function closeModal(id){const el=document.getElementById(id);if(el)el.classList.remove('open');}
+
 initState();
-// Splash → app
 setTimeout(()=>{
   const splash=document.getElementById('splash');
-  if(splash)splash.classList.add('hidden');
-  setTimeout(()=>{if(splash)splash.style.display='none'},500);
+  if(splash){splash.classList.add('hidden');setTimeout(()=>{splash.style.display='none'},500);}
   render();
-},1600);
+},1500);
 </script>
 </body>
 </html>
