@@ -1,9 +1,11 @@
-const CACHE = 'axis-v1';
+const CACHE = 'axis-v1.1';
+const BASE = '/axis-pwa';
+
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon.svg',
+  `${BASE}/`,
+  `${BASE}/index.html`,
+  `${BASE}/manifest.json`,
+  `${BASE}/icon.svg`,
   'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700;800&display=swap'
 ];
 
@@ -34,7 +36,7 @@ self.addEventListener('fetch', e => {
         const clone = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, clone));
         return res;
-      }).catch(() => caches.match('/index.html'));
+      }).catch(() => caches.match('/axis-pwa/index.html'));
     })
   );
 });
