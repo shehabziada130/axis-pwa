@@ -1,4 +1,4 @@
-const CACHE = 'axis-v3';
+const CACHE = 'axis-v4';
 const ASSETS = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -22,28 +22,32 @@ self.addEventListener('fetch', e => {
   }));
 });
 
-// ── NOTIFICATION SUPPORT ──────────────────────────────────────────────────────
-// Receives push-like messages from the main thread and shows them as system notifications
+// ── NOTIFICATION HANDLER ─────────────────────────────────────────────────────
+// Receives messages from the app and shows them as proper OS-level notifications.
+// requireInteraction:true = notification stays on screen until user taps it.
 self.addEventListener('message', e => {
-  if(e.data && e.data.type === 'SHOW_NOTIF') {
-    const { title, body } = e.data;
-    self.registration.showNotification(title, {
-      body,
-      icon: './icon-192.png',
-      badge: './icon-192.png',
-      vibrate: [300, 100, 300, 100, 300],
-      tag: 'axis-task',
-      renotify: true,
-      requireInteraction: false,  // auto-dismiss after a few seconds
-      silent: false               // plays default notification sound
-    });
-  }
+  if(!e.data || e.data.type !== 'SHOW_NOTIF') return;
+  const { title, body } = e.data;
+  self.registration.showNotification(title, {
+    body,
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    vibrate: [400, 150, 400, 150, 600],
+    tag: 'axis-task',
+    renotify: true,
+    requireInteraction: true,   // stays visible — user must dismiss
+    silent: false               // plays system notification sound
+  });
 });
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  e.waitUntil(clients.matchAll({type:'window'}).then(list => {
-    for(const c of list) { if(c.url && 'focus' in c) { c.focus(); return; } }
-    return clients.openWindow('./index.html');
-  }));
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if (c.url && 'focus' in c) { c.focus(); return; }
+      }
+      return clients.openWindow('./index.html');
+    })
+  );
 });

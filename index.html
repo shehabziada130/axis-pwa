@@ -192,17 +192,41 @@ function parseTime(str){
 }
 function nowTimeStr(){const d=new Date(),h=d.getHours(),m=d.getMinutes();return(h<10?'0':'')+h+':'+(m<10?'0':'')+m}
 
-// Compute absolute scheduled start/end for every task
-// Each task starts right when the previous ends; first task uses its own startAt
+// Compute absolute scheduled start/end for every task.
+// Rules:
+//   • If a task has its own startAt anchor, that wins (creates intentional gap or break in chain).
+//   • Otherwise, task starts right when the previous one ends.
+//   • First task uses its own startAt if set, else null (unscheduled).
 function scheduleTimes(tasks){
+  // Pure chain: task[0].startAt anchors everything.
+  // Each subsequent task starts when the previous ends.
+  // A task with .gapStartAt is intentionally placed at a specific time (creates a gap).
   const out=[];
-  let cursor=tasks.length&&tasks[0].startAt?tasks[0].startAt:null;
   for(let i=0;i<tasks.length;i++){
-    if(i===0)cursor=tasks[0].startAt||null;
-    else cursor=out[i-1]?out[i-1].end:null;
-    out.push({start:cursor,end:cursor!=null?cursor+tasks[i].dur*60:null});
+    const t=tasks[i];
+    let start;
+    if(i===0) start=t.startAt||null;
+    else if(t.gapStartAt) start=t.gapStartAt;
+    else start=out[i-1]?out[i-1].end:null;
+    out.push({start,end:start!=null?start+t.dur*60:null});
   }
   return out;
+}
+
+// Re-sort tasks array by their scheduled start time (tasks with startAt anchor first,
+// then unchained tasks stay in relative order after their anchor predecessor).
+// Call after any edit that changes a startAt or inserts a task with an explicit time.
+function sortTasksByTime(tasks){
+  // Build times, then sort by start (nulls go to end)
+  const times=scheduleTimes(tasks);
+  const indexed=tasks.map((t,i)=>({t,start:times[i].start,i}));
+  indexed.sort((a,b)=>{
+    if(a.start==null&&b.start==null)return a.i-b.i;
+    if(a.start==null)return 1;
+    if(b.start==null)return-1;
+    return a.start-b.start;
+  });
+  return indexed.map(x=>x.t);
 }
 
 // Find gaps (>30s) between consecutive tasks that have scheduled times
@@ -300,53 +324,23 @@ function advanceTask(){
 
 // ═══════════════════════════════════════════════════════════════
 //  NOTIFICATIONS — send via SW for pop-up, fallback to browser
-// ═══════════════════════════════════════════════════════════════
-async function requestNotifPermission(){
-  if(!('Notification' in window))return;
-  const p=await Notification.requestPermission();
-  S.notifGranted=(p==='granted');render();
-}
-function sendNotif(title,body){
-  if(!S.notifGranted||!('Notification' in window))return;
-  try{
-    // Route through Service Worker so it shows as a pop-up system notification
-    if(navigator.serviceWorker&&navigator.serviceWorker.controller){
-      navigator.serviceWorker.controller.postMessage({type:'SHOW_NOTIF',title,body});
-    } else if(navigator.serviceWorker){
-      navigator.serviceWorker.ready.then(reg=>{
-        reg.showNotification(title,{
-          body,icon:'./icon-192.png',badge:'./icon-192.png',
-          vibrate:[300,100,300,100,300],
-          tag:'axis-task',renotify:true,
-          requireInteraction:false,silent:false
-        });
-      });
-    } else {
-      new Notification(title,{body,icon:'./icon-192.png'});
-    }
-  }catch(e){
-    try{new Notification(title,{body});}catch(e2){}
-  }
-}
-
-// In-app toast (for gap warnings while app is open)
-function showToast(msg,duration=4000){
-  const el=document.getElementById('gap-toast');
-  if(!el)return;
-  el.textContent=msg;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),duration);
-}
-function checkAndNotifyGaps(tasks){
-  const gaps=findGaps(tasks);if(!gaps.length)return;
-  const total=gaps.reduce((a,g)=>a+g.gapSec,0);
-  if(total<60)return;
-  const mins=Math.round(total/60);
-  showToast(`⏳ ${fmtMins(mins)} without a task — check Today tab`);
-}
 
 // ═══════════════════════════════════════════════════════════════
 //  RENDER
 // ═══════════════════════════════════════════════════════════════
+function axisIcon(s){
+  return `<svg width="${s}" height="${s}" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+    <rect width="512" height="512" rx="100" fill="#0a0a0f"/>
+    <circle cx="256" cy="256" r="180" fill="none" stroke="#7c6df0" stroke-width="22"/>
+    <circle cx="256" cy="256" r="32" fill="#7c6df0"/>
+    <line x1="256" y1="56" x2="256" y2="160" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/>
+    <line x1="256" y1="352" x2="256" y2="456" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/>
+    <line x1="56" y1="256" x2="160" y2="256" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/>
+    <line x1="352" y1="256" x2="456" y2="256" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="256" cy="256" r="10" fill="#fff"/>
+  </svg>`;
+}
+
 function render(){
   const app=document.getElementById('app');
   app.innerHTML=`<div style="display:flex;flex-direction:column;height:100%">${renderScreen()}${renderNav()}</div>${renderModals()}`;
@@ -516,8 +510,8 @@ function renderSchedule(){
                 </div>
               </div>
               ${gap?`<div class="gap-row">
-                <div class="gap-pill" onclick="openAdd('schedule',${i+1})">
-                  ⏳ ${fmtMins(Math.round(gap.gapSec/60))} free — tap to fill
+                <div class="gap-pill" onclick="openAdd('schedule',${i+1})" title="Tap to fill this gap">
+                  ⚠️ ${fmtMins(Math.round(gap.gapSec/60))} unallocated time — this minute has no job. Tap to fill it.
                 </div>
               </div>`:''}
             </div>
@@ -868,20 +862,18 @@ function amSave(){
     afterIdx=tasks.length-1; // append
   }
 
-  // If a specific start time was given, check if there's a gap before it
+  // Gap warning: if start time is given and leaves a gap after the previous task, warn but DO NOT reposition
   if(startTs&&tasks.length>0){
     const times=scheduleTimes(tasks);
-    // Find position based on start time
-    let bestPos=-1;
-    for(let i=0;i<times.length;i++){
-      if(times[i].end&&times[i].end<=startTs) bestPos=i;
-    }
-    afterIdx=bestPos;
-    // Check gap
-    const prevEnd=bestPos>=0&&times[bestPos]?times[bestPos].end:null;
-    if(prevEnd&&startTs>prevEnd+60){
-      const gapMins=Math.round((startTs-prevEnd)/60);
-      showToast(`⏳ ${fmtMins(gapMins)} of free time before this task`);
+    const insertPos2=afterIdx<0?0:afterIdx+1;
+    const prevEnd2=insertPos2>0&&times[insertPos2-1]?times[insertPos2-1].end:null;
+    if(prevEnd2&&startTs>prevEnd2+60){
+      const gapMins=Math.round((startTs-prevEnd2)/60);
+      showGapWarning(
+        tasks[insertPos2-1]?tasks[insertPos2-1].name:'start',
+        name,
+        gapMins
+      );
     }
   }
 
@@ -903,29 +895,41 @@ function amSave(){
 }
 
 function doInsert(name,dur,startTs,afterIdx,target){
-  const task={id:uid(),name,dur,done:false,startAt:null};
+  // If a start time was given, anchor it on the task so it sorts correctly
+  const task={id:uid(),name,dur,done:false,startAt:startTs||null};
   let isNew=false;
   if(target==='today'){
     if(!S.today){S.today={tasks:[],startedAt:nowSec()};isNew=true;}
     if(afterIdx<0)S.today.tasks.unshift(task);
     else S.today.tasks.splice(afterIdx+1,0,task);
-    const insertedIdx=afterIdx<0?0:afterIdx+1;
-    if(insertedIdx<=S.currentIdx&&!isNew)S.currentIdx++;
-    if(insertedIdx===0&&startTs){S.today.startedAt=startTs;task.startAt=startTs;}
+
+    // Re-sort all tasks by their scheduled start time so order is always time-correct
+    const currentTaskId=cur()?cur().id:null;
+    S.today.tasks=sortTasksByTime(S.today.tasks);
+    // Re-find currentIdx after sort
+    if(currentTaskId){
+      const idx=S.today.tasks.findIndex(t=>t.id===currentTaskId);
+      if(idx>=0)S.currentIdx=idx;
+    }
+
+    // If first task or brand new, anchor schedule
     if(isNew||S.today.tasks.length===1){
       S.currentIdx=0;
-      if(!task.startAt)task.startAt=nowSec();
-      S.today.startedAt=task.startAt;S.paused=false;
+      if(!S.today.tasks[0].startAt)S.today.tasks[0].startAt=nowSec();
+      S.today.startedAt=S.today.tasks[0].startAt;
+      S.paused=false;
+    } else if(S.today.tasks[0].startAt){
+      S.today.startedAt=S.today.tasks[0].startAt;
     }
-    // If start time given, anchor it
-    if(startTs&&!task.startAt&&insertedIdx===0){task.startAt=startTs;S.today.startedAt=startTs;}
+
     checkAndNotifyGaps(S.today.tasks);
     saveToday();
   } else {
     if(!S.tomorrow)S.tomorrow={tasks:[],startedAt:null};
     if(afterIdx<0)S.tomorrow.tasks.unshift(task);
     else S.tomorrow.tasks.splice(afterIdx+1,0,task);
-    if(startTs&&S.tomorrow.tasks.indexOf(task)===0)S.tomorrow.startedAt=startTs;
+    S.tomorrow.tasks=sortTasksByTime(S.tomorrow.tasks);
+    if(startTs&&S.tomorrow.tasks[0]===task)S.tomorrow.startedAt=startTs;
     sv('tomorrow',S.tomorrow);
   }
   closeModal('addModal');render();
@@ -1183,50 +1187,168 @@ function startTomorrow(){
 function installApp(){if(!deferredInstall)return;deferredInstall.prompt();deferredInstall.userChoice.then(()=>{deferredInstall=null;render();});}
 
 // ─── TICK ──────────────────────────────────────────────────────
+// Runs every second regardless of screen.
+// On re-open or visibility change: catches up any expired tasks.
+function catchUpTasks(){
+  if(!S.today||S.paused)return;
+  let safety=60;
+  while(safety-->0){
+    const t=cur();
+    if(!t||t.name.toLowerCase()==='sleep')break;
+    if(!t.startAt)break;
+    const sec=Math.max(0,t.dur*60-(nowSec()-t.startAt));
+    if(sec>0)break;
+    // Task expired
+    const taskName=t.name;
+    const nextTask=nxt();
+    sendNotif('\u23f1 '+taskName+' is done!',nextTask?'Up next: '+nextTask.name+' ('+fmtMins(nextTask.dur)+')':'All done for now!');
+    if(S.today){const ct2=cur();if(ct2)ct2.done=true;}
+    S.currentIdx++;
+    S.recoveryShown=false;
+    if(!S.today||S.currentIdx>=S.today.tasks.length){saveToday();break;}
+    const nxt2=cur();
+    if(nxt2&&nxt2.name.toLowerCase()==='sleep'){nxt2.startAt=nowSec();saveToday();break;}
+    startCurrentTask();saveToday();
+  }
+}
+
 function startTick(){
   if(tickInterval)clearInterval(tickInterval);
+  catchUpTasks(); // immediate catch-up on start
+
   tickInterval=setInterval(()=>{
-    if(S.screen!=='focus')return;
-    const t=cur();if(!t||S.paused||t.name.toLowerCase()==='sleep')return;
+    const t=cur();
+    if(!t||S.paused||t.name.toLowerCase()==='sleep')return;
     const sec=getSecondsLeft();
-    const el=document.getElementById('timer-display');if(el)el.textContent=fmt(sec);
-    const ring=document.getElementById('ring-prog');
-    if(ring){
-      ring.style.strokeDashoffset=565-(Math.max(0,Math.min(1,1-(sec/(t.dur*60))))*565);
-      ring.style.stroke=sec<120?'var(--red)':sec<300?'var(--amber)':'var(--accent)';
+
+    // Update UI only when on focus screen
+    if(S.screen==='focus'){
+      const el=document.getElementById('timer-display');if(el)el.textContent=fmt(sec);
+      const ring=document.getElementById('ring-prog');
+      if(ring){
+        ring.style.strokeDashoffset=565-(Math.max(0,Math.min(1,1-(sec/(t.dur*60))))*565);
+        ring.style.stroke=sec<120?'var(--red)':sec<300?'var(--amber)':'var(--accent)';
+      }
     }
+
     if(sec<=0&&!S.paused){
       if(lastNotifTask!==S.currentIdx){
         lastNotifTask=S.currentIdx;
         const next=nxt();
-        sendNotif(`⏱ ${t.name} is done!`,next?`Up next: ${next.name} (${fmtMins(next.dur)})`:'All done for now!');
+        sendNotif('\u23f1 '+t.name+' is done!',next?'Up next: '+next.name+' ('+fmtMins(next.dur)+')':'All done for now!');
       }
       advanceTask();
     }
   },1000);
 }
 
-function axisIcon(s){
-  return `<svg width="${s}" height="${s}" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-    <rect width="512" height="512" rx="100" fill="#0a0a0f"/>
-    <circle cx="256" cy="256" r="180" fill="none" stroke="#7c6df0" stroke-width="22"/>
-    <circle cx="256" cy="256" r="32" fill="#7c6df0"/>
-    <line x1="256" y1="56" x2="256" y2="160" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/>
-    <line x1="256" y1="352" x2="256" y2="456" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/>
-    <line x1="56" y1="256" x2="160" y2="256" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/>
-    <line x1="352" y1="256" x2="456" y2="256" stroke="#7c6df0" stroke-width="18" stroke-linecap="round"/>
-    <circle cx="256" cy="256" r="10" fill="#fff"/>
-  </svg>`;
+// Re-catch-up when app comes back to foreground
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden){
+    setTimeout(()=>{catchUpTasks();render();},150);
+  }
+});
+
+// ─── NOTIFICATIONS ──────────────────────────────────────────────
+async function requestNotifPermission(){
+  if(!('Notification' in window))return;
+  const p=await Notification.requestPermission();
+  S.notifGranted=(p==='granted');render();
+}
+function sendNotif(title,body){
+  if(!S.notifGranted||!('Notification' in window))return;
+  const opts={
+    body,icon:'./icon-192.png',badge:'./icon-192.png',
+    vibrate:[400,150,400,150,600],
+    tag:'axis-task',renotify:true,
+    requireInteraction:true,  // stays on screen until user dismisses
+    silent:false
+  };
+  try{
+    if(navigator.serviceWorker&&navigator.serviceWorker.controller){
+      navigator.serviceWorker.controller.postMessage({type:'SHOW_NOTIF',title,body,requireInteraction:true});
+    } else {
+      navigator.serviceWorker.ready.then(reg=>{
+        reg.showNotification(title,opts);
+      }).catch(()=>{new Notification(title,{body,icon:'./icon-192.png'});});
+    }
+  }catch(e){
+    try{new Notification(title,{body});}catch(e2){}
+  }
+}
+
+// Gap warning toast
+function showToast(msg,duration){
+  duration=duration||4500;
+  const el=document.getElementById('gap-toast');if(!el)return;
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),duration);
+}
+function showGapWarning(prevName,nextName,gapMins){
+  showToast('\u26a0\ufe0f '+fmtMins(gapMins)+' gap between "'+prevName+'" and "'+nextName+'" — this time has no job. Fill it or it\'s wasted.',7000);
+}
+function checkAndNotifyGaps(tasks){
+  const gaps=findGaps(tasks);if(!gaps.length)return;
+  const total=gaps.reduce((a,g)=>a+g.gapSec,0);
+  if(total<60)return;
+  showToast('\u23f3 '+fmtMins(Math.round(total/60))+' without a job — see Today tab');
+}
+
+// ─── TEST / DEBUG ──────────────────────────────────────────────
+function testLoadSample(){
+  const now=nowSec();
+  S.today={
+    tasks:[
+      {id:uid(),name:'Plan Your Day',dur:10,done:true,startAt:now-3600},
+      {id:uid(),name:'Breakfast',dur:20,done:true,startAt:null},
+      {id:uid(),name:'Study',dur:60,done:false,startAt:now-600},
+      {id:uid(),name:'Break',dur:15,done:false,startAt:null},
+      {id:uid(),name:'Workout',dur:45,done:false,startAt:null},
+      {id:uid(),name:'Dinner',dur:30,done:false,startAt:null},
+      {id:uid(),name:'Sleep',dur:480,done:false,startAt:null},
+    ],startedAt:now-3600};
+  S.currentIdx=2;S.paused=false;saveToday();go('focus');
+}
+function testSimulateBehind(){
+  if(!S.today||!S.today.tasks.length){testLoadSample();setTimeout(testSimulateBehind,300);return;}
+  const t=cur();if(!t)return;
+  // Wind back the start time by 45 mins so it looks overdue
+  if(t.startAt) t.startAt-=45*60;
+  if(S.today.tasks[0].startAt) S.today.tasks[0].startAt-=45*60;
+  S.today.startedAt=(S.today.startedAt||nowSec())-45*60;
+  saveToday();S.recoveryShown=false;render();
+  showToast('Simulated 45 min delay applied');
+}
+function testNotification(){
+  if(!S.notifGranted){
+    requestNotifPermission().then(()=>{
+      if(S.notifGranted){sendNotif('Test Notification','Axis alerts are working!');}
+    });return;
+  }
+  sendNotif('\u23f1 Study is done!','Up next: Break (15m) — notification test');
+  showToast('Notification sent — check your notification bar',5000);
+}
+function testAdvanceTask(){
+  if(!S.today||!S.today.tasks.length){alert('No schedule loaded. Use Load Sample Day first.');return;}
+  advanceTask();showToast('Task advanced manually');
+}
+function testClearAll(){
+  if(!confirm('Clear ALL Axis data? Cannot be undone.'))return;
+  localStorage.clear();S.today=null;S.tomorrow=null;S.currentIdx=0;S.paused=false;render();
 }
 
 // ─── INIT ──────────────────────────────────────────────────────
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;});
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js',{scope:'./'})
-      .then(reg=>console.log('SW scope:',reg.scope))
-      .catch(e=>console.warn('SW:',e));
-  });
+  const loc=window.location.href;
+  const isLocal=loc.startsWith('file://')||loc.includes('claudeusercontent.com')||loc.includes('localhost');
+  if(!isLocal){
+    window.addEventListener('load',()=>{
+      navigator.serviceWorker.register('./sw.js',{scope:'./'})
+        .then(reg=>console.log('SW scope:',reg.scope))
+        .catch(e=>console.warn('SW:',e));
+    });
+  }
 }
 initState();
 setTimeout(()=>{
