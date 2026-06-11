@@ -89,8 +89,13 @@ circle.prog{fill:none;stroke:var(--accent);stroke-width:12;stroke-linecap:round;
 .tl-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tl-time{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px}
 .tl-actions{display:flex;gap:4px;flex-shrink:0}
-.gap-row{display:flex;align-items:center;gap:8px;padding:4px 0 4px 36px;margin-bottom:2px}
-.gap-pill{background:rgba(245,166,35,.1);border:1px dashed rgba(245,166,35,.35);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--amber);font-family:'DM Mono',monospace;cursor:pointer;display:flex;align-items:center;gap:5px}
+.gap-row{display:flex;align-items:stretch;padding:0 0 6px 36px;margin-bottom:0}
+.gap-block{flex:1;background:rgba(245,166,35,.06);border:1px dashed rgba(245,166,35,.4);border-radius:12px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.gap-block-left{display:flex;flex-direction:column;gap:2px}
+.gap-block-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(245,166,35,.7);font-weight:700}
+.gap-block-time{font-size:12px;color:var(--amber);font-family:'DM Mono',monospace;font-weight:600}
+.gap-block-sub{font-size:11px;color:var(--muted)}
+.gap-fill-btn{background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.35);border-radius:8px;color:var(--amber);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .icon-btn{background:var(--surface2);border:none;color:var(--muted);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
 .select-check{width:20px;height:20px;border-radius:6px;background:var(--surface3);border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;transition:.15s}
 .select-check.on{background:var(--green);border-color:var(--green);color:#fff}
@@ -318,8 +323,9 @@ function advanceTask(){
   S.currentIdx++;S.recoveryShown=false;
   if(S.currentIdx>=S.today.tasks.length){saveToday();render();return;}
   const next=cur();
-  if(next&&next.name.toLowerCase()==='sleep'){next.startAt=nowSec();saveToday();render();return;}
-  startCurrentTask();saveToday();render();
+  if(next){next.startAt=nowSec();}  // re-anchor so timer is correct after skip/done-early
+  S.paused=false;S.pausedAt=null;S.pausedSecondsLeft=null;
+  saveToday();render();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -510,8 +516,13 @@ function renderSchedule(){
                 </div>
               </div>
               ${gap?`<div class="gap-row">
-                <div class="gap-pill" onclick="openAdd('schedule',${i+1})" title="Tap to fill this gap">
-                  ⚠️ ${fmtMins(Math.round(gap.gapSec/60))} unallocated time — this minute has no job. Tap to fill it.
+                <div class="gap-block">
+                  <div class="gap-block-left">
+                    <div class="gap-block-label">⚠ Unscheduled gap</div>
+                    <div class="gap-block-time">${fmtTime(times[i].end)} → ${fmtTime(times[i+1]&&times[i+1].start?times[i+1].start:times[i].end+gap.gapSec)} · ${fmtMins(Math.round(gap.gapSec/60))}</div>
+                    <div class="gap-block-sub">This time has no job — fill it or it's wasted.</div>
+                  </div>
+                  <button class="gap-fill-btn" onclick="openAdd('schedule',${i+1})">+ Fill</button>
                 </div>
               </div>`:''}
             </div>
@@ -680,19 +691,15 @@ function renderModals(){
     <div class="modal">
       <div class="modal-title">⚡ Time Conflict</div>
       <div id="conflictInfo" class="hint-box red" style="margin-bottom:14px"></div>
-      <div class="conflict-option" onclick="conflictEditNew()">
-        <h4>Edit new task's time</h4><p>Go back and change the task you're adding.</p>
+      <div class="conflict-option" onclick="conflictShift()">
+        <h4>Shift everything forward</h4><p id="conflictShiftDesc">Push all conflicting tasks forward to make room.</p>
       </div>
-      <div class="conflict-option" onclick="conflictEditExisting()">
-        <h4>Edit existing task's time</h4><p>Adjust the conflicting task already in the schedule.</p>
+      <div class="conflict-option" onclick="conflictMoveToEnd()">
+        <h4>Move conflicting task to end</h4><p id="conflictMoveDesc">Keep the new task's time, move conflicting task after the last task.</p>
       </div>
-      <div class="conflict-option" onclick="conflictDeleteNew()">
-        <h4>Discard new task</h4><p>Don't add the new task.</p>
+      <div class="conflict-option" onclick="conflictCancel()">
+        <h4>Cancel — don't add</h4><p>Discard the new task.</p>
       </div>
-      <div class="conflict-option" onclick="conflictDeleteExisting()">
-        <h4>Replace existing task</h4><p>Remove the conflicting task and add the new one.</p>
-      </div>
-      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="closeModal('conflictModal')">Cancel</button>
     </div>
   </div>
 
@@ -772,6 +779,7 @@ function openAdd(fromTab, insertAfterIdx){
       if(i===M.insertAfterIdx)o.selected=true;
       sel.appendChild(o);
     });
+    sel.onchange=amCalc;
     // Auto-select last item by default (append)
     if(M.insertAfterIdx<0||M.insertAfterIdx>=S.today.tasks.length){
       sel.value=S.today.tasks.length-1;
@@ -820,19 +828,57 @@ function buildAmTmplSection(fromTab){
     </div>`).join('');
 }
 
-// Live calc: start+end→dur | start+dur→show end
+// Live calc: start+end→dur | start+dur→show end | show conflicts live
 function amCalc(){
   const startTs=parseTime(document.getElementById('am_start').value);
   const endTs=parseTime(document.getElementById('am_end').value);
   const dur=parseInt(document.getElementById('am_dur').value);
   const hint=document.getElementById('am_hint');
+  let calcDur=dur;
   if(startTs&&endTs&&endTs>startTs){
-    const calc=Math.round((endTs-startTs)/60);
-    document.getElementById('am_dur').value=calc;
-    hint.className='hint-box green';hint.textContent=`Duration: ${fmtMins(calc)}`;hint.style.display='block';
-  } else if(startTs&&dur>0){
-    hint.className='hint-box';hint.textContent=`Ends at ${toTimeStr(startTs+dur*60)}`;hint.style.display='block';
-  } else hint.style.display='none';
+    calcDur=Math.round((endTs-startTs)/60);
+    document.getElementById('am_dur').value=calcDur;
+  }
+  // Check for conflicts while user is choosing time
+  const target=M.fromTab==='plan_tomorrow'?'tomorrow':'today';
+  const tasks=target==='today'?(S.today?S.today.tasks:[]):(S.tomorrow?S.tomorrow.tasks:[]);
+  let afterIdx=M.editIdx>=0?-99:(() => {
+    const sel=document.getElementById('am_after');
+    return sel?parseInt(sel.value):tasks.length-1;
+  })();
+  if(startTs&&calcDur>0&&tasks.length>0&&M.editIdx<0){
+    const insertPos=afterIdx<0?0:afterIdx+1;
+    const times=scheduleTimes(tasks);
+    const newEnd=startTs+calcDur*60;
+    // Check if new task overlaps anything
+    const conflicts=[];
+    for(let i=0;i<tasks.length;i++){
+      if(times[i].start==null||times[i].end==null)continue;
+      // overlap check
+      if(startTs<times[i].end&&newEnd>times[i].start){
+        conflicts.push({name:tasks[i].name,idx:i,start:times[i].start,end:times[i].end});
+      }
+    }
+    if(conflicts.length){
+      const names=conflicts.map(c=>c.name).join(', ');
+      hint.className='hint-box red';
+      hint.innerHTML=`⚡ Conflicts with: <strong>${names}</strong><br><span style="font-size:11px">Save anyway → you'll be asked how to resolve</span>`;
+      hint.style.display='block';
+      return;
+    }
+  }
+  // No conflicts — normal display
+  if(startTs&&calcDur>0){
+    hint.className='hint-box green';
+    hint.textContent=`Ends at ${toTimeStr(startTs+calcDur*60)}`;
+    hint.style.display='block';
+  } else if(startTs&&endTs&&endTs>startTs){
+    hint.className='hint-box green';
+    hint.textContent=`Duration: ${fmtMins(calcDur)}`;
+    hint.style.display='block';
+  } else {
+    hint.style.display='none';
+  }
 }
 
 function amSave(){
@@ -857,104 +903,130 @@ function amSave(){
   let tasks=target==='today'?(S.today?S.today.tasks:[]):(S.tomorrow?S.tomorrow.tasks:[]);
   let afterIdx;
   if(M.fromTab==='schedule'||M.fromTab==='focus'){
-    afterIdx=parseInt(document.getElementById('am_after').value);
+    const sel=document.getElementById('am_after');
+    afterIdx=sel?parseInt(sel.value):tasks.length-1;
   } else {
-    afterIdx=tasks.length-1; // append
+    afterIdx=tasks.length-1;
   }
 
-  // Gap warning: if start time is given and leaves a gap after the previous task, warn but DO NOT reposition
+  // Conflict check: only if start time given
   if(startTs&&tasks.length>0){
     const times=scheduleTimes(tasks);
+    const newEnd=startTs+dur*60;
+    const conflictIdxs=[];
+    for(let i=0;i<tasks.length;i++){
+      if(times[i].start==null||times[i].end==null)continue;
+      if(startTs<times[i].end-30&&newEnd>times[i].start+30){
+        conflictIdxs.push(i);
+      }
+    }
+    if(conflictIdxs.length){
+      const names=conflictIdxs.map(i=>tasks[i].name).join(', ');
+      M.conflictPending={name,dur,startTs,afterIdx,target,conflictIdx:conflictIdxs[0],conflictTasks:conflictIdxs};
+      const shiftMins=fmtMins(dur);
+      document.getElementById('conflictInfo').textContent=
+        `"${name}" (${fmtMins(dur)}) overlaps: ${names}`;
+      document.getElementById('conflictShiftDesc').textContent=
+        `Push all conflicting tasks forward by ${shiftMins} to make room.`;
+      document.getElementById('conflictMoveDesc').textContent=
+        `Move "${names}" to after the last task. New task keeps its time.`;
+      closeModal('addModal');
+      document.getElementById('conflictModal').classList.add('open');
+      return;
+    }
+    // Gap warning (no conflict, just a gap)
     const insertPos2=afterIdx<0?0:afterIdx+1;
     const prevEnd2=insertPos2>0&&times[insertPos2-1]?times[insertPos2-1].end:null;
     if(prevEnd2&&startTs>prevEnd2+60){
-      const gapMins=Math.round((startTs-prevEnd2)/60);
-      showGapWarning(
-        tasks[insertPos2-1]?tasks[insertPos2-1].name:'start',
-        name,
-        gapMins
-      );
+      showGapWarning(tasks[insertPos2-1]?tasks[insertPos2-1].name:'start',name,Math.round((startTs-prevEnd2)/60));
     }
-  }
-
-  // Conflict check
-  const times=scheduleTimes(tasks);
-  const insertPos=afterIdx<0?0:afterIdx+1;
-  const prevEnd=insertPos>0&&times[insertPos-1]?times[insertPos-1].end:null;
-  const nextStart=insertPos<times.length&&times[insertPos]?times[insertPos].start:null;
-  if(prevEnd&&nextStart&&prevEnd+dur*60>nextStart+60){
-    M.conflictPending={name,dur,startTs,afterIdx,target,conflictIdx:insertPos};
-    document.getElementById('conflictInfo').textContent=
-      `"${name}" (${fmtMins(dur)}) would overlap with "${tasks[insertPos]?tasks[insertPos].name:'next task'}".`;
-    closeModal('addModal');
-    document.getElementById('conflictModal').classList.add('open');
-    return;
   }
 
   doInsert(name,dur,startTs,afterIdx,target);
 }
 
 function doInsert(name,dur,startTs,afterIdx,target){
-  // If a start time was given, anchor it on the task so it sorts correctly
-  const task={id:uid(),name,dur,done:false,startAt:startTs||null};
+  const insertPos=afterIdx<0?0:afterIdx+1;
+  const task={id:uid(),name,dur,done:false,startAt:null,gapStartAt:null};
   let isNew=false;
   if(target==='today'){
     if(!S.today){S.today={tasks:[],startedAt:nowSec()};isNew=true;}
     if(afterIdx<0)S.today.tasks.unshift(task);
     else S.today.tasks.splice(afterIdx+1,0,task);
 
-    // Re-sort all tasks by their scheduled start time so order is always time-correct
-    const currentTaskId=cur()?cur().id:null;
-    S.today.tasks=sortTasksByTime(S.today.tasks);
-    // Re-find currentIdx after sort
-    if(currentTaskId){
-      const idx=S.today.tasks.findIndex(t=>t.id===currentTaskId);
-      if(idx>=0)S.currentIdx=idx;
-    }
-
-    // If first task or brand new, anchor schedule
     if(isNew||S.today.tasks.length===1){
       S.currentIdx=0;
-      if(!S.today.tasks[0].startAt)S.today.tasks[0].startAt=nowSec();
+      S.today.tasks[0].startAt=startTs||nowSec();
       S.today.startedAt=S.today.tasks[0].startAt;
       S.paused=false;
-    } else if(S.today.tasks[0].startAt){
-      S.today.startedAt=S.today.tasks[0].startAt;
+    } else {
+      if(insertPos===0){
+        if(startTs){S.today.tasks[0].startAt=startTs;S.today.startedAt=startTs;}
+        else if(S.today.tasks[0].startAt){S.today.startedAt=S.today.tasks[0].startAt;}
+      } else if(startTs){
+        // Check if start time creates a gap after the previous task
+        const prevTimes=scheduleTimes(S.today.tasks.filter((_,i)=>i!==insertPos));
+        const prevEnd=prevTimes[insertPos-1]?prevTimes[insertPos-1].end:null;
+        if(prevEnd&&startTs>prevEnd+30){
+          task.gapStartAt=startTs; // anchor the gap
+        }
+      }
     }
-
     checkAndNotifyGaps(S.today.tasks);
     saveToday();
   } else {
     if(!S.tomorrow)S.tomorrow={tasks:[],startedAt:null};
     if(afterIdx<0)S.tomorrow.tasks.unshift(task);
     else S.tomorrow.tasks.splice(afterIdx+1,0,task);
-    S.tomorrow.tasks=sortTasksByTime(S.tomorrow.tasks);
-    if(startTs&&S.tomorrow.tasks[0]===task)S.tomorrow.startedAt=startTs;
+    if(insertPos===0&&startTs){S.tomorrow.tasks[0].startAt=startTs;S.tomorrow.startedAt=startTs;}
     sv('tomorrow',S.tomorrow);
   }
   closeModal('addModal');render();
 }
 
 // Conflict handlers
-function conflictEditNew(){
-  closeModal('conflictModal');
-  document.getElementById('am_name').value=M.conflictPending.name;
-  document.getElementById('am_dur').value=M.conflictPending.dur;
-  document.getElementById('addModal').classList.add('open');
-}
-function conflictEditExisting(){
-  closeModal('conflictModal');
-  if(M.conflictPending.target==='today')openEditTask(M.conflictPending.conflictIdx);
-}
-function conflictDeleteNew(){M.conflictPending=null;closeModal('conflictModal');render();}
-function conflictDeleteExisting(){
-  const{target,conflictIdx,name,dur,startTs,afterIdx}=M.conflictPending;
+function conflictShift(){
+  const{name,dur,startTs,afterIdx,target}=M.conflictPending;
   const tasks=target==='today'?S.today.tasks:S.tomorrow.tasks;
-  tasks.splice(conflictIdx,1);
-  if(target==='today'&&conflictIdx<=S.currentIdx)S.currentIdx=Math.max(0,S.currentIdx-1);
-  M.conflictPending=null;closeModal('conflictModal');
-  doInsert(name,dur,startTs,afterIdx,target);
+  const insertPos=afterIdx<0?0:afterIdx+1;
+  const task={id:uid(),name,dur,done:false,startAt:null,gapStartAt:null};
+  // Set anchor on new task
+  if(insertPos===0){task.startAt=startTs||null;}
+  else if(startTs){
+    const prevEnd=scheduleTimes(tasks)[insertPos-1]?.end;
+    task.gapStartAt=(prevEnd&&startTs>prevEnd+30)?startTs:null;
+  }
+  tasks.splice(insertPos,0,task);
+  // Push any anchor times forward on tasks that follow
+  for(let i=insertPos+1;i<tasks.length;i++){
+    if(tasks[i].startAt)tasks[i].startAt+=dur*60;
+    if(tasks[i].gapStartAt)tasks[i].gapStartAt+=dur*60;
+  }
+  if(target==='today'){checkAndNotifyGaps(tasks);saveToday();}
+  else sv('tomorrow',S.tomorrow);
+  M.conflictPending=null;closeModal('conflictModal');render();
 }
+function conflictMoveToEnd(){
+  const{name,dur,startTs,afterIdx,target,conflictIdx,conflictTasks}=M.conflictPending;
+  const tasks=target==='today'?S.today.tasks:S.tomorrow.tasks;
+  // Remove all conflicting tasks and append them after the last task
+  const removed=[];
+  // conflictTasks are indices; remove from end to front to preserve indices
+  const sortedIdxs=[...conflictTasks].sort((a,b)=>b-a);
+  sortedIdxs.forEach(i=>{removed.unshift(...tasks.splice(i,1));});
+  // Insert new task at chosen position (now indices may have shifted)
+  const insertPos=afterIdx<0?0:Math.min(afterIdx+1,tasks.length);
+  const task={id:uid(),name,dur,done:false,startAt:startTs||null};
+  tasks.splice(insertPos,0,task);
+  // Append removed tasks at end, clearing their startAt so they chain naturally
+  removed.forEach(t=>{t.startAt=null;tasks.push(t);});
+  if(target==='today'){
+    if(S.currentIdx>=tasks.length)S.currentIdx=Math.max(0,tasks.length-1);
+    checkAndNotifyGaps(tasks);saveToday();
+  } else sv('tomorrow',S.tomorrow);
+  M.conflictPending=null;closeModal('conflictModal');render();
+}
+function conflictCancel(){M.conflictPending=null;closeModal('conflictModal');}
 
 // ─── APPLY TEMPLATE MODAL ────────────────────────────────────
 function openApplyTemplate(tmplIdx,target){
