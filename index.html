@@ -313,19 +313,37 @@ function getSecondsBehind(){
   for(let i=0;i<S.currentIdx;i++)planned+=S.today.tasks[i].dur*60;
   return Math.max(0,t.startAt-planned);
 }
+function scheduleAlarm(){
+  // Tell SW when the current task expires so it can fire background notification
+  if(!S.today||S.paused)return;
+  const t=cur();if(!t||!t.startAt||t.name.toLowerCase()==='sleep')return;
+  const deadlineTs=t.startAt+t.dur*60;
+  const next=nxt();
+  const nextDur=next?fmtMins(next.dur):null;
+  navigator.serviceWorker&&navigator.serviceWorker.ready.then(reg=>{
+    if(reg.active)reg.active.postMessage({type:'SCHEDULE_ALARM',deadlineTs,taskName:t.name,nextName:next?next.name:null,nextDur});
+  }).catch(()=>{});
+}
+function cancelAlarm(){
+  navigator.serviceWorker&&navigator.serviceWorker.ready.then(reg=>{
+    if(reg.active)reg.active.postMessage({type:'CANCEL_ALARM'});
+  }).catch(()=>{});
+}
 function startCurrentTask(){
   const t=cur();if(!t)return;
-  t.startAt=nowSec();S.paused=false;S.pausedAt=null;S.pausedSecondsLeft=null;saveToday();
+  t.startAt=nowSec();S.paused=false;S.pausedAt=null;S.pausedSecondsLeft=null;
+  saveToday();scheduleAlarm();
 }
 function advanceTask(){
   if(!S.today)return;
+  cancelAlarm();
   const t=cur();if(t)t.done=true;
   S.currentIdx++;S.recoveryShown=false;
   if(S.currentIdx>=S.today.tasks.length){saveToday();render();return;}
   const next=cur();
-  if(next){next.startAt=nowSec();}  // re-anchor so timer is correct after skip/done-early
+  if(next){next.startAt=nowSec();}
   S.paused=false;S.pausedAt=null;S.pausedSecondsLeft=null;
-  saveToday();render();
+  saveToday();scheduleAlarm();render();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -986,18 +1004,28 @@ function doInsert(name,dur,startTs,afterIdx,target){
 
 // Conflict handlers
 function conflictShift(){
-  const{name,dur,startTs,afterIdx,target}=M.conflictPending;
-  const tasks=target==='today'?S.today.tasks:S.tomorrow.tasks;
+  const p=M.conflictPending;
+  const tasks=p.target==='today'?S.today.tasks:S.tomorrow.tasks;
+  if(p.isTemplate){
+    // Push any anchored tasks that conflict forward by template total duration
+    for(let i=0;i<tasks.length;i++){
+      if(p.conflictTasks.includes(i)){
+        if(tasks[i].startAt)tasks[i].startAt+=p.totalDur*60;
+        if(tasks[i].gapStartAt)tasks[i].gapStartAt+=p.totalDur*60;
+      }
+    }
+    M.conflictPending=null;closeModal('conflictModal');
+    doApplyTemplate(p.startTs,p.target);return;
+  }
+  const{name,dur,startTs,afterIdx,target}=p;
   const insertPos=afterIdx<0?0:afterIdx+1;
   const task={id:uid(),name,dur,done:false,startAt:null,gapStartAt:null};
-  // Set anchor on new task
   if(insertPos===0){task.startAt=startTs||null;}
   else if(startTs){
     const prevEnd=scheduleTimes(tasks)[insertPos-1]?.end;
     task.gapStartAt=(prevEnd&&startTs>prevEnd+30)?startTs:null;
   }
   tasks.splice(insertPos,0,task);
-  // Push any anchor times forward on tasks that follow
   for(let i=insertPos+1;i<tasks.length;i++){
     if(tasks[i].startAt)tasks[i].startAt+=dur*60;
     if(tasks[i].gapStartAt)tasks[i].gapStartAt+=dur*60;
@@ -1007,24 +1035,17 @@ function conflictShift(){
   M.conflictPending=null;closeModal('conflictModal');render();
 }
 function conflictMoveToEnd(){
-  const{name,dur,startTs,afterIdx,target,conflictIdx,conflictTasks}=M.conflictPending;
-  const tasks=target==='today'?S.today.tasks:S.tomorrow.tasks;
-  // Remove all conflicting tasks and append them after the last task
+  const p=M.conflictPending;
+  const tasks=p.target==='today'?S.today.tasks:S.tomorrow.tasks;
+  // Remove conflicting tasks and push to end
+  const sortedIdxs=[...p.conflictTasks].sort((a,b)=>b-a);
   const removed=[];
-  // conflictTasks are indices; remove from end to front to preserve indices
-  const sortedIdxs=[...conflictTasks].sort((a,b)=>b-a);
   sortedIdxs.forEach(i=>{removed.unshift(...tasks.splice(i,1));});
-  // Insert new task at chosen position (now indices may have shifted)
-  const insertPos=afterIdx<0?0:Math.min(afterIdx+1,tasks.length);
-  const task={id:uid(),name,dur,done:false,startAt:startTs||null};
-  tasks.splice(insertPos,0,task);
-  // Append removed tasks at end, clearing their startAt so they chain naturally
-  removed.forEach(t=>{t.startAt=null;tasks.push(t);});
-  if(target==='today'){
-    if(S.currentIdx>=tasks.length)S.currentIdx=Math.max(0,tasks.length-1);
-    checkAndNotifyGaps(tasks);saveToday();
-  } else sv('tomorrow',S.tomorrow);
-  M.conflictPending=null;closeModal('conflictModal');render();
+  removed.forEach(t=>{t.startAt=null;t.gapStartAt=null;tasks.push(t);});
+  if(p.target==='today'&&S.currentIdx>=tasks.length)S.currentIdx=Math.max(0,tasks.length-1);
+  M.conflictPending=null;closeModal('conflictModal');
+  if(p.isTemplate){doApplyTemplate(p.startTs,p.target);}
+  else{doInsert(p.name,p.dur,p.startTs,p.afterIdx,p.target);}
 }
 function conflictCancel(){M.conflictPending=null;closeModal('conflictModal');}
 
@@ -1060,45 +1081,85 @@ function applyDurChange(i,v){M.applyTasks[i].dur=parseInt(v)||M.applyTasks[i].du
 function applyDup(i){M.applyTasks.splice(i+1,0,{...M.applyTasks[i]});renderApplyList();}
 function applyDel(i){M.applyTasks.splice(i,1);renderApplyList();}
 function applyCalc(){
-  const startStr=document.getElementById('apply_start').value;
-  const startTs=parseTime(startStr);
+  const startTs=parseTime(document.getElementById('apply_start').value);
   const total=M.applyTasks.reduce((a,b)=>a+b.dur,0);
   const hint=document.getElementById('apply_hint');
-  if(startTs){
-    hint.textContent=`${M.applyTasks.length} tasks · ${fmtMins(total)} · starts ${toTimeStr(startTs)} → ends ${toTimeStr(startTs+total*60)}`;
-    hint.style.display='block';
-  } else {
-    hint.textContent=`${M.applyTasks.length} tasks · ${fmtMins(total)} total`;hint.style.display='block';
+  if(!startTs){hint.textContent=`${M.applyTasks.length} tasks · ${fmtMins(total)} total`;hint.style.display='block';return;}
+  // Live conflict check
+  const target=M.applyTarget;
+  const existing=target==='today'?(S.today?S.today.tasks:[]):(S.tomorrow?S.tomorrow.tasks:[]);
+  if(existing.length){
+    const times=scheduleTimes(existing);
+    const newEnd=startTs+total*60;
+    const conflicts=[];
+    for(let i=0;i<existing.length;i++){
+      if(times[i].start==null||times[i].end==null)continue;
+      if(startTs<times[i].end-30&&newEnd>times[i].start+30)conflicts.push(existing[i].name);
+    }
+    if(conflicts.length){
+      hint.className='hint-box red';
+      hint.innerHTML=`⚡ Conflicts with: <strong>${conflicts.join(', ')}</strong><br><span style="font-size:11px">Save anyway → you'll be asked how to resolve</span>`;
+      hint.style.display='block';return;
+    }
   }
+  hint.className='hint-box green';
+  hint.textContent=`${M.applyTasks.length} tasks · ${fmtMins(total)} · ${toTimeStr(startTs)} → ${toTimeStr(startTs+total*60)}`;
+  hint.style.display='block';
 }
 function applyTemplateSave(){
   if(!M.applyTasks.length){alert('Add at least one task.');return;}
-  const startStr=document.getElementById('apply_start').value;
-  const startTs=parseTime(startStr);
+  const startTs=parseTime(document.getElementById('apply_start').value);
   if(!startTs){alert('Please set a start time for the template.');return;}
-  const tasks=M.applyTasks.map((t,i)=>({
-    id:uid(),name:t.name,dur:t.dur,done:false,
-    startAt:i===0?startTs:null
-  }));
   const target=M.applyTarget;
+  const existing=target==='today'?(S.today?S.today.tasks:[]):(S.tomorrow?S.tomorrow.tasks:[]);
+  const totalDur=M.applyTasks.reduce((a,b)=>a+b.dur,0);
+
+  // Conflict check
+  if(existing.length){
+    const times=scheduleTimes(existing);
+    const newEnd=startTs+totalDur*60;
+    const conflictIdxs=[];
+    for(let i=0;i<existing.length;i++){
+      if(times[i].start==null||times[i].end==null)continue;
+      if(startTs<times[i].end-30&&newEnd>times[i].start+30)conflictIdxs.push(i);
+    }
+    if(conflictIdxs.length){
+      const names=conflictIdxs.map(i=>existing[i].name).join(', ');
+      // Store template-specific pending so conflict handlers know it's a batch
+      M.conflictPending={isTemplate:true,startTs,totalDur,target,conflictIdx:conflictIdxs[0],conflictTasks:conflictIdxs};
+      document.getElementById('conflictInfo').textContent=
+        `Template (${fmtMins(totalDur)}) overlaps: ${names}`;
+      document.getElementById('conflictShiftDesc').textContent=
+        `Push all conflicting tasks forward by ${fmtMins(totalDur)} to make room.`;
+      document.getElementById('conflictMoveDesc').textContent=
+        `Move "${names}" to after the last task. Template keeps its time.`;
+      closeModal('applyModal');
+      document.getElementById('conflictModal').classList.add('open');
+      return;
+    }
+  }
+  doApplyTemplate(startTs,target);
+}
+function doApplyTemplate(startTs,target){
+  // Build tasks: first gets startAt anchor; rest chain naturally.
+  // If template start is later than existing last task end → first task gets gapStartAt.
+  const tasks=M.applyTasks.map((t,i)=>({id:uid(),name:t.name,dur:t.dur,done:false,startAt:null,gapStartAt:null}));
   if(target==='today'){
     if(!S.today||!S.today.tasks.length){
+      tasks[0].startAt=startTs;
       S.today={tasks,startedAt:startTs};S.currentIdx=0;S.paused=false;
     } else {
-      // Check gap between existing last task and new template start
       const existingTimes=scheduleTimes(S.today.tasks);
-      const lastEnd=existingTimes.length?existingTimes[existingTimes.length-1].end:null;
-      if(lastEnd&&startTs>lastEnd+60){
-        const gapMins=Math.round((startTs-lastEnd)/60);
-        showToast(`⏳ ${fmtMins(gapMins)} gap before this template starts`);
-      }
+      const lastEnd=existingTimes[existingTimes.length-1]?.end;
+      if(lastEnd&&startTs>lastEnd+30) tasks[0].gapStartAt=startTs;
+      else tasks[0].startAt=startTs; // chain anchor
       tasks.forEach(t=>S.today.tasks.push(t));
     }
-    checkAndNotifyGaps(S.today.tasks);
-    saveToday();
+    checkAndNotifyGaps(S.today.tasks);saveToday();
   } else {
     if(!S.tomorrow){S.tomorrow={tasks:[],startedAt:startTs};}
-    else{S.tomorrow.startedAt=startTs;}
+    else S.tomorrow.startedAt=startTs;
+    tasks[0].startAt=startTs;
     tasks.forEach(t=>S.tomorrow.tasks.push(t));
     sv('tomorrow',S.tomorrow);
   }
@@ -1223,12 +1284,13 @@ function dupTask(i){
 }
 function pauseTask(){
   if(S.paused)return;
+  cancelAlarm();
   S.paused=true;S.pausedAt=nowSec();S.pausedSecondsLeft=getSecondsLeft();saveToday();render();
 }
 function resumeTask(){
   if(!S.paused)return;
   const t=cur();if(t){const el=t.dur*60-S.pausedSecondsLeft;t.startAt=nowSec()-el;}
-  S.paused=false;S.pausedAt=null;S.pausedSecondsLeft=null;saveToday();render();
+  S.paused=false;S.pausedAt=null;S.pausedSecondsLeft=null;saveToday();scheduleAlarm();render();
 }
 function skipTask(){if(confirm('Skip this task?'))advanceTask();}
 function endEarly(){advanceTask();}
@@ -1254,7 +1316,7 @@ function startTomorrow(){
   if(!S.tomorrow||!S.tomorrow.tasks||!S.tomorrow.tasks.length)return;
   S.today={tasks:S.tomorrow.tasks.map(t=>({...t,done:false,startAt:null})),startedAt:nowSec()};
   S.currentIdx=0;S.tomorrow=null;sv('tomorrow',null);
-  startCurrentTask();saveToday();go('focus');
+  startCurrentTask();saveToday();scheduleAlarm();go('focus');
 }
 function installApp(){if(!deferredInstall)return;deferredInstall.prompt();deferredInstall.userChoice.then(()=>{deferredInstall=null;render();});}
 
@@ -1286,7 +1348,7 @@ function catchUpTasks(){
 
 function startTick(){
   if(tickInterval)clearInterval(tickInterval);
-  catchUpTasks(); // immediate catch-up on start
+  catchUpTasks();scheduleAlarm(); // immediate catch-up + arm SW alarm
 
   tickInterval=setInterval(()=>{
     const t=cur();
@@ -1317,7 +1379,7 @@ function startTick(){
 // Re-catch-up when app comes back to foreground
 document.addEventListener('visibilitychange',()=>{
   if(!document.hidden){
-    setTimeout(()=>{catchUpTasks();render();},150);
+    setTimeout(()=>{catchUpTasks();scheduleAlarm();render();},150);
   }
 });
 
@@ -1409,6 +1471,18 @@ function testClearAll(){
   localStorage.clear();S.today=null;S.tomorrow=null;S.currentIdx=0;S.paused=false;render();
 }
 
+// ─── SW MESSAGE LISTENER ──────────────────────────────────────
+// SW posts TASK_EXPIRED when a background alarm fires
+if(navigator.serviceWorker){
+  navigator.serviceWorker.addEventListener('message', e=>{
+    if(!e.data)return;
+    if(e.data.type==='TASK_EXPIRED'){
+      // Catch up state (may be multiple tasks behind if offline long)
+      catchUpTasks();render();
+    }
+  });
+}
+
 // ─── INIT ──────────────────────────────────────────────────────
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;});
 if('serviceWorker' in navigator){
@@ -1417,7 +1491,11 @@ if('serviceWorker' in navigator){
   if(!isLocal){
     window.addEventListener('load',()=>{
       navigator.serviceWorker.register('./sw.js',{scope:'./'})
-        .then(reg=>console.log('SW scope:',reg.scope))
+        .then(reg=>{
+          console.log('SW scope:',reg.scope);
+          // Tell SW we're open so it can flush any pending expiry
+          if(reg.active)reg.active.postMessage({type:'APP_READY'});
+        })
         .catch(e=>console.warn('SW:',e));
     });
   }
