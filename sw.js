@@ -1,4 +1,4 @@
-const CACHE = 'axis-v4';
+const CACHE = 'axis-v1.5';
 const ASSETS = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
